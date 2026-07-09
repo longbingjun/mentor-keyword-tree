@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>思维之树 | 关键词盲盒</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06110f;
+      --text: #f5efe2;
+      --muted: #b9c9bc;
+      --gold: #ffd886;
+      --green: #77e1b4;
+      --line: rgba(255, 255, 255, 0.16);
+      --panel: rgba(8, 20, 17, 0.78);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(119, 225, 180, 0.18), transparent 34%),
+        radial-gradient(circle at 80% 70%, rgba(255, 216, 134, 0.12), transparent 28%),
+        linear-gradient(180deg, #071411, #030605 78%);
+      color: var(--text);
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .shade {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.48), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.38)),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 60%, rgba(0, 0, 0, 0.46));
+    }
+
+    .hero {
+      position: fixed;
+      left: clamp(18px, 5vw, 72px);
+      top: clamp(18px, 6vh, 64px);
+      max-width: min(460px, calc(100vw - 36px));
+      z-index: 3;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 13px;
+      letter-spacing: 0.16em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 72px);
+      line-height: 0.98;
+      font-weight: 700;
+    }
+
+    .intro {
+      margin: 18px 0 0;
+      max-width: 390px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 11px 16px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      font: inherit;
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 216, 134, 0.65);
+      background: rgba(255, 216, 134, 0.12);
+    }
+
+    .progress {
+      position: fixed;
+      right: clamp(18px, 4vw, 52px);
+      top: clamp(18px, 6vh, 58px);
+      z-index: 3;
+      width: min(280px, calc(100vw - 36px));
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(5, 15, 13, 0.54);
+      backdrop-filter: blur(18px);
+    }
+
+    .progress strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .bar {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .bar span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--gold));
+      transition: width 360ms ease;
+    }
+
+    .hint {
+      margin: 10px 0 0;
+      color: rgba(245, 239, 226, 0.68);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(0, 0, 0, 0.52);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+
+    .modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .card {
+      width: min(680px, 100%);
+      max-height: min(720px, calc(100vh - 36px));
+      overflow: auto;
+      border: 1px solid rgba(255, 216, 134, 0.34);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 82% 12%, rgba(255, 216, 134, 0.16), transparent 24%),
+        linear-gradient(180deg, rgba(16, 36, 30, 0.96), rgba(7, 13, 12, 0.97));
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      padding: clamp(22px, 4vw, 38px);
+      transform: translateY(16px) scale(0.98);
+      transition: transform 220ms ease;
+    }
+
+    .modal.open .card {
+      transform: translateY(0) scale(1);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .keyword {
+      margin: 0;
+      color: var(--gold);
+      font-size: clamp(34px, 7vw, 62px);
+      line-height: 1;
+    }
+
+    .date {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .close {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .section {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .section p {
+      margin: 0;
+      color: rgba(245, 239, 226, 0.88);
+      font-size: 16px;
+      line-height: 1.9;
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .steps li {
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(245, 239, 226, 0.9);
+    }
+
+    .final {
+      position: fixed;
+      left: 50%;
+      bottom: clamp(18px, 5vh, 48px);
+      z-index: 4;
+      width: min(760px, calc(100vw - 36px));
+      padding: 20px 22px;
+      border: 1px solid rgba(255, 216, 134, 0.34);
+      border-radius: 8px;
+      background: var(--panel);
+      color: rgba(245, 239, 226, 0.92);
+      text-align: center;
+      line-height: 1.8;
+      transform: translate(-50%, 26px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 360ms ease, transform 360ms ease;
+      backdrop-filter: blur(18px);
+    }
+
+    .final.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .magic {
+      position: fixed;
+      width: 92px;
+      height: 92px;
+      margin: -46px 0 0 -46px;
+      border: 1px solid rgba(119, 225, 180, 0.34);
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 2;
+      background: radial-gradient(circle, rgba(119, 225, 180, 0.16), transparent 58%);
+      box-shadow: 0 0 38px rgba(119, 225, 180, 0.24);
+      transition: opacity 160ms ease;
+    }
+
+    .magic.on {
+      opacity: 1;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        overflow: auto;
+      }
+
+      .progress {
+        left: 18px;
+        right: 18px;
+        top: auto;
+        bottom: 18px;
+        width: auto;
+      }
+
+      .hero {
+        top: 24px;
+      }
+
+      .intro {
+        max-width: 330px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="tree" aria-hidden="true"></canvas>
+  <div class="shade"></div>
+  <div id="magic" class="magic"></div>
+
+  <main class="hero">
+    <p class="eyebrow">MENTOR KEYWORD TREE</p>
+    <h1>思维之树</h1>
+    <p class="intro">每一颗果实，都是一次交流之后留下的关键词。摘下它，就能看到那个瞬间、那条判断路径，以及我真正学到的东西。</p>
+    <div class="toolbar">
+      <button id="pickRandom">随机摘一颗</button>
+      <button id="toggleMagic">开启魔法模式</button>
+    </div>
+  </main>
+
+  <aside class="progress">
+    <strong id="counter">已摘下 0 / 8 颗果实</strong>
+    <div class="bar"><span id="bar"></span></div>
+    <p class="hint">点击树上的发光果实，或开启魔法模式后把光圈移到果实附近。</p>
+  </aside>
+
+  <section id="modal" class="modal" aria-modal="true" role="dialog">
+    <article class="card">
+      <div class="card-top">
+        <div>
+          <p id="keyword" class="keyword"></p>
+          <div id="date" class="date"></div>
+        </div>
+        <button id="close" class="close" aria-label="关闭">×</button>
+      </div>
+
+      <div class="section">
+        <h2>生长时刻</h2>
+        <p id="scene"></p>
+      </div>
+
+      <div class="section">
+        <h2>我看到的你</h2>
+        <p id="observation"></p>
+      </div>
+
+      <div class="section">
+        <h2>思考路径</h2>
+        <ul id="thinking" class="steps"></ul>
+      </div>
+
+      <div class="section">
+        <h2>我摘到的东西</h2>
+        <p id="lesson"></p>
+      </div>
+
+      <div class="section">
+        <h2>留在我身上的一句话</h2>
+        <p id="quote"></p>
+      </div>
+    </article>
+  </section>
+
+  <div id="final" class="final">
+    这些果实不是我对你的简单总结，而是你在我身上留下的思考方式。谢谢你把很多答案，变成了我以后也能继续生长的判断力。
+  </div>
+
+  <script>
+    const records = [
+      {
+        keyword: "清醒",
+        short: "清",
+        date: "第 1 颗果实",
+        scene: "那天我急着问方案怎么推进，你先让我回到目标本身：这个问题到底要解决什么。",
+        observation: "你不会被表层动作带着走，而是先把问题放回正确的位置。",
+        thinking: ["先确认目标是否清楚", "再判断约束和代价", "最后选择值得投入的动作"],
+        lesson: "有效行动不是更快开始，而是先确认自己没有跑偏。",
+        quote: "方向感比执行力更早决定结果。"
+      },
+      {
+        keyword: "精准",
+        short: "准",
+        date: "第 2 颗果实",
+        scene: "我给出一堆信息时，你没有全部展开，而是抓住最关键的那个变量继续追问。",
+        observation: "你能在杂乱信息里迅速识别真正影响判断的点。",
+        thinking: ["剥离噪音", "找到决定性变量", "围绕变量验证结论"],
+        lesson: "复杂问题不一定要复杂处理，先找到杠杆点。",
+        quote: "把力气用在真正改变结果的地方。"
+      },
+      {
+        keyword: "耐心",
+        short: "耐",
+        date: "第 3 颗果实",
+        scene: "我一开始没理解你的意思，你没有直接否定，而是换了一个例子重新讲。",
+        observation: "你的耐心不是放慢节奏，而是愿意为理解搭桥。",
+        thinking: ["确认对方卡在哪里", "换一种表达方式", "让对方自己接上逻辑"],
+        lesson: "好的带教不是灌输答案，而是帮助别人完成理解。",
+        quote: "真正的沟通，是让对方也能走完那条路。"
+      },
+      {
+        keyword: "边界",
+        short: "界",
+        date: "第 4 颗果实",
+        scene: "讨论任务范围时，你提醒我要分清什么是必须完成，什么只是锦上添花。",
+        observation: "你会保护目标，也会保护投入，不让事情无限膨胀。",
+        thinking: ["定义必须交付的结果", "识别额外动作的收益", "控制范围和节奏"],
+        lesson: "边界感不是保守，而是让重要的事情真的落地。",
+        quote: "先把该完成的完成，再谈更漂亮。"
+      },
+      {
+        keyword: "长远",
+        short: "远",
+        date: "第 5 颗果实",
+        scene: "我只看到眼前任务，你提醒我这个动作会不会形成以后可复用的方法。",
+        observation: "你习惯把一次具体工作，放进更长的成长路径里看。",
+        thinking: ["判断眼前收益", "提炼可复用方法", "沉淀到下一次也能使用"],
+        lesson: "成长不是完成很多事，而是每次完成后都留下能力。",
+        quote: "一次任务结束后，方法应该继续留下来。"
+      },
+      {
+        keyword: "坦诚",
+        short: "诚",
+        date: "第 6 颗果实",
+        scene: "你指出我方案里的问题时很直接，但也明确说明为什么这会影响结果。",
+        observation: "你的坦诚不是情绪化评价，而是把问题摊开，让人能改。",
+        thinking: ["指出具体问题", "说明影响后果", "给出可调整方向"],
+        lesson: "真正有帮助的反馈，应该让人知道下一步怎么变好。",
+        quote: "直接不是锋利，直接是负责。"
+      },
+      {
+        keyword: "结构",
+        short: "构",
+        date: "第 7 颗果实",
+        scene: "你让我把想法从一段话拆成背景、问题、判断、行动四层。",
+        observation: "你总能把混乱表达整理成可讨论、可推进的结构。",
+        thinking: ["先放背景", "再定义问题", "接着给判断", "最后落到行动"],
+        lesson: "结构不是形式感，而是让别人更快进入同一个问题。",
+        quote: "表达清楚，本身就是推进。"
+      },
+      {
+        keyword: "笃定",
+        short: "定",
+        date: "第 8 颗果实",
+        scene: "当方向已经判断清楚时，你没有反复摇摆，而是推动我把事情做下去。",
+        observation: "你的笃定来自前面充分的判断，而不是盲目的自信。",
+        thinking: ["把前提想清楚", "接受不确定性", "在可承受范围内推进"],
+        lesson: "不是等完全确定才行动，而是知道为什么值得行动。",
+        quote: "想清楚之后，就给行动一点信任。"
+      }
+    ];
+
+    const canvas = document.getElementById("tree");
+    const ctx = canvas.getContext("2d");
+    const modal = document.getElementById("modal");
+    const magic = document.getElementById("magic");
+    const final = document.getElementById("final");
+    const counter = document.getElementById("counter");
+    const bar = document.getElementById("bar");
+    const fruitState = records.map(() => false);
+    const pointer = { x: -999, y: -999 };
+    let particles = [];
+    let fruits = [];
+    let magicMode = false;
+    let pixelRatio = 1;
+
+    function resize() {
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(innerWidth * pixelRatio);
+      canvas.height = Math.floor(innerHeight * pixelRatio);
+      canvas.style.width = innerWidth + "px";
+      canvas.style.height = innerHeight + "px";
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      buildTree();
+    }
+
+    function branch(points, x, y, angle, length, depth) {
+      if (depth <= 0 || length < 12) return;
+      const segments = Math.max(8, Math.floor(length / 8));
+      let px = x;
+      let py = y;
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const sway = Math.sin(t * Math.PI * 2 + depth) * length * 0.025;
+        const nx = x + Math.cos(angle) * length * t + Math.cos(angle + Math.PI / 2) * sway;
+        const ny = y + Math.sin(angle) * length * t;
+        const dots = Math.max(2, Math.floor(depth * 1.6));
+        for (let d = 0; d < dots; d++) {
+          const jitter = (Math.random() - 0.5) * depth * 2.2;
+          points.push({ x: nx + jitter, y: ny + (Math.random() - 0.5) * depth * 2.2, baseX: nx + jitter, baseY: ny, r: Math.random() * 1.3 + 0.55, a: Math.random() * 0.5 + 0.32 });
+        }
+        px = nx;
+        py = ny;
+      }
+      branch(points, px, py, angle - (0.34 + Math.random() * 0.18), length * (0.66 + Math.random() * 0.08), depth - 1);
+      branch(points, px, py, angle + (0.30 + Math.random() * 0.22), length * (0.62 + Math.random() * 0.1), depth - 1);
+      if (depth > 3) {
+        branch(points, px, py, angle + (Math.random() - 0.5) * 0.22, length * 0.48, depth - 2);
+      }
+    }
+
+    function buildTree() {
+      particles = [];
+      const baseX = innerWidth * 0.56;
+      const baseY = innerHeight * 0.92;
+      const trunk = Math.min(innerHeight * 0.38, innerWidth * 0.34);
+      branch(particles, baseX, baseY, -Math.PI / 2, trunk, 8);
+
+      fruits = records.map((record, index) => {
+        const positions = [
+          [0.43, 0.34], [0.55, 0.24], [0.66, 0.34], [0.49, 0.47],
+          [0.62, 0.49], [0.73, 0.45], [0.37, 0.52], [0.58, 0.61]
+        ];
+        const [fx, fy] = positions[index];
+        return {
+          x: innerWidth * fx,
+          y: innerHeight * fy,
+          baseX: innerWidth * fx,
+          baseY: innerHeight * fy,
+          radius: Math.max(18, Math.min(innerWidth, innerHeight) * 0.026),
+          record,
+          index,
+          pulse: Math.random() * Math.PI * 2
+        };
+      });
+    }
+
+    function draw(time) {
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      const t = time * 0.001;
+
+      for (const p of particles) {
+        const dx = pointer.x - p.baseX;
+        const dy = pointer.y - p.baseY;
+        const dist = Math.hypot(dx, dy);
+        const push = magicMode && dist < 110 ? (1 - dist / 110) * 16 : 0;
+        const x = p.baseX - dx * 0.018 * push + Math.sin(t + p.baseY * 0.02) * 0.8;
+        const y = p.baseY - dy * 0.018 * push + Math.cos(t + p.baseX * 0.02) * 0.6;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(151, 232, 190, ${p.a})`;
+        ctx.arc(x, y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const fruit of fruits) {
+        const picked = fruitState[fruit.index];
+        if (picked) continue;
+        const hover = Math.hypot(pointer.x - fruit.x, pointer.y - fruit.y) < fruit.radius + 28;
+        fruit.y = fruit.baseY + Math.sin(t * 1.8 + fruit.pulse) * 5;
+        fruit.x = fruit.baseX + Math.cos(t * 1.2 + fruit.pulse) * 2;
+
+        const glow = hover ? 1 : 0.55 + Math.sin(t * 2 + fruit.pulse) * 0.15;
+        const gradient = ctx.createRadialGradient(fruit.x, fruit.y, 2, fruit.x, fruit.y, fruit.radius * 2.6);
+        gradient.addColorStop(0, `rgba(255, 236, 174, ${0.95 * glow})`);
+        gradient.addColorStop(0.34, `rgba(255, 180, 92, ${0.62 * glow})`);
+        gradient.addColorStop(1, "rgba(255, 180, 92, 0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(fruit.x, fruit.y, fruit.radius * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(255, 213, 128, 0.92)";
+        ctx.arc(fruit.x, fruit.y, fruit.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#2d1b05";
+        ctx.font = `700 ${Math.max(14, fruit.radius * 0.82)}px "Microsoft YaHei", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(fruit.record.short, fruit.x, fruit.y + 1);
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    function openFruit(index) {
+      if (index < 0 || fruitState[index]) return;
+      fruitState[index] = true;
+      const record = records[index];
+      document.getElementById("keyword").textContent = record.keyword;
+      document.getElementById("date").textContent = record.date;
+      document.getElementById("scene").textContent = record.scene;
+      document.getElementById("observation").textContent = record.observation;
+      document.getElementById("lesson").textContent = record.lesson;
+      document.getElementById("quote").textContent = record.quote;
+      const thinking = document.getElementById("thinking");
+      thinking.innerHTML = "";
+      record.thinking.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        thinking.appendChild(li);
+      });
+      modal.classList.add("open");
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const count = fruitState.filter(Boolean).length;
+      counter.textContent = `已摘下 ${count} / ${records.length} 颗果实`;
+      bar.style.width = `${Math.round(count / records.length * 100)}%`;
+      final.classList.toggle("show", count === records.length);
+    }
+
+    function fruitAt(x, y, extra = 0) {
+      return fruits.find((fruit) => !fruitState[fruit.index] && Math.hypot(x - fruit.x, y - fruit.y) < fruit.radius + extra);
+    }
+
+    canvas.addEventListener("click", (event) => {
+      const fruit = fruitAt(event.clientX, event.clientY, 24);
+      if (fruit) openFruit(fruit.index);
+    });
+
+    window.addEventListener("pointermove", (event) => {
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      magic.style.left = pointer.x + "px";
+      magic.style.top = pointer.y + "px";
+      if (magicMode) {
+        const fruit = fruitAt(pointer.x, pointer.y, 34);
+        if (fruit) openFruit(fruit.index);
+      }
+    });
+
+    document.getElementById("pickRandom").addEventListener("click", () => {
+      const remaining = fruitState.map((picked, index) => picked ? -1 : index).filter((index) => index >= 0);
+      if (remaining.length) openFruit(remaining[Math.floor(Math.random() * remaining.length)]);
+    });
+
+    document.getElementById("toggleMagic").addEventListener("click", (event) => {
+      magicMode = !magicMode;
+      magic.classList.toggle("on", magicMode);
+      event.currentTarget.textContent = magicMode ? "关闭魔法模式" : "开启魔法模式";
+    });
+
+    document.getElementById("close").addEventListener("click", () => modal.classList.remove("open"));
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) modal.classList.remove("open");
+    });
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") modal.classList.remove("open");
+    });
+    window.addEventListener("resize", resize);
+
+    resize();
+    updateProgress();
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
