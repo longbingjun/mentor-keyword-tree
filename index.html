@@ -293,6 +293,7 @@
     let curves = [];
     let roots = [];
     let fruit = [];
+    let memoryFruits = [];
     let stars = [];
     let streamers = [];
     let nodes = [];
@@ -390,6 +391,7 @@
       curves = [];
       roots = [];
       fruit = [];
+      memoryFruits = [];
       stars = [];
       streamers = [];
       nodes = [];
@@ -469,6 +471,28 @@
           index
         };
       });
+
+      const smallFruitCount = mobile ? 72 : 132;
+      const crownCenter = { x: innerWidth * 0.68, y: innerHeight * 0.43 };
+      const crownRx = innerWidth * (mobile ? 0.28 : 0.34);
+      const crownRy = innerHeight * 0.39;
+      for (let i = 0; i < smallFruitCount; i++) {
+        const angle = rand(-Math.PI * 0.98, Math.PI * 0.26);
+        const radius = Math.sqrt(rand(0.02, 1));
+        const x = crownCenter.x + Math.cos(angle) * crownRx * radius + rand(-18, 18);
+        const y = crownCenter.y + Math.sin(angle) * crownRy * radius + rand(-16, 16);
+        const stage = clamp(Math.floor((1 - y / innerHeight) * records.length + rand(-0.8, 1.2)), 0, records.length - 1);
+        memoryFruits.push({
+          x,
+          y,
+          baseX: x,
+          baseY: y,
+          stage,
+          growAt: clamp((stage + 1) / records.length + rand(-0.035, 0.045), 0.12, 1),
+          radius: rand(1.6, 4.4),
+          pulse: rand(0, Math.PI * 2)
+        });
+      }
 
       for (let i = 0; i < 80; i++) {
         streamers.push({
@@ -551,27 +575,57 @@
       const visible = f.index < litCount || f.index === litCount;
       if (!visible || grow < f.growAt - 0.02) return;
       const lit = f.index < litCount;
+      const activeIndex = selected >= 0 ? selected : litCount;
+      const active = f.index === activeIndex && litCount < records.length;
+      const pending = f.index === litCount && !active && litCount < records.length;
       f.x = f.baseX + Math.cos(t + f.pulse) * 4;
       f.y = f.baseY + Math.sin(t * 1.4 + f.pulse) * 5;
       const hover = Math.hypot(pointer.x - f.x, pointer.y - f.y) < f.radius + 30;
-      const glow = lit ? 0.72 : hover ? 1.34 : 0.98 + Math.sin(t * 2.1 + f.pulse) * 0.2;
-      const halo = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * 5.6);
+      const age = lit ? Math.max(1, litCount - f.index) : 0;
+      const displayRadius = active ? f.radius * 1.72 : pending ? f.radius * 0.8 : f.radius * clamp(0.5 - age * 0.045, 0.18, 0.42);
+      const glow = active ? (hover ? 1.48 : 1.08 + Math.sin(t * 2.1 + f.pulse) * 0.22) : pending ? 0.62 : 0.38;
+      const halo = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, displayRadius * (active ? 5.6 : 3.2));
       halo.addColorStop(0, `rgba(255, 230, 163, ${0.92 * glow})`);
       halo.addColorStop(0.32, `rgba(226, 188, 108, ${0.32 * glow})`);
       halo.addColorStop(1, "rgba(226, 188, 108, 0)");
       ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.radius * 5.6, 0, Math.PI * 2);
+      ctx.arc(f.x, f.y, displayRadius * (active ? 5.6 : 3.2), 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = lit ? "rgba(231, 196, 117, 0.92)" : "rgba(255, 233, 170, 1)";
+      ctx.fillStyle = active ? "rgba(255, 233, 170, 1)" : "rgba(231, 196, 117, 0.9)";
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+      ctx.arc(f.x, f.y, displayRadius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "rgba(2, 2, 8, 0.84)";
-      ctx.font = `500 ${Math.max(12, f.radius * 0.78)}px "Microsoft YaHei", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(f.record.short, f.x, f.y + 0.5);
+      if (active) {
+        ctx.fillStyle = "rgba(2, 2, 8, 0.84)";
+        ctx.font = `500 ${Math.max(12, displayRadius * 0.74)}px "Microsoft YaHei", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(f.record.short, f.x, f.y + 0.5);
+      }
+    }
+
+    function drawMemoryFruit(f, t) {
+      if (grow < f.growAt - 0.025 || f.stage >= litCount) return;
+      const age = Math.max(1, litCount - f.stage);
+      const appear = clamp((grow - f.growAt + 0.025) / 0.08, 0, 1);
+      const pulse = 0.74 + Math.sin(t * 1.8 + f.pulse) * 0.18;
+      const x = f.baseX + Math.cos(t * 0.9 + f.pulse) * 2.1;
+      const y = f.baseY + Math.sin(t * 1.1 + f.pulse) * 2.4;
+      const r = f.radius * clamp(1.1 - age * 0.07, 0.55, 1) * ease(appear);
+      const alpha = clamp(0.22 + litCount / records.length * 0.48, 0.22, 0.72) * pulse;
+      const halo = ctx.createRadialGradient(x, y, 0, x, y, r * 6);
+      halo.addColorStop(0, `rgba(255, 230, 163, ${alpha})`);
+      halo.addColorStop(0.36, `rgba(226, 188, 108, ${alpha * 0.24})`);
+      halo.addColorStop(1, "rgba(226, 188, 108, 0)");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255, 230, 163, ${alpha * 0.92})`;
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(0.8, r), 0, Math.PI * 2);
+      ctx.fill();
     }
 
     function drawFinal(t) {
@@ -641,6 +695,7 @@
       particles.forEach((p) => drawParticle(p, t));
       drawStreams(t);
       drawFinal(t);
+      memoryFruits.forEach((f) => drawMemoryFruit(f, t));
       fruit.forEach((f) => drawFruit(f, t));
       ctx.restore();
 
