@@ -3,19 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>带教认知树 | Mentor Cognition Tree</title>
+  <title>带教认知树</title>
   <style>
     :root {
       color-scheme: dark;
-      --bg: #03030a;
-      --ink: #ece3cf;
-      --muted: rgba(236, 227, 207, 0.52);
-      --dim: rgba(236, 227, 207, 0.28);
-      --gold: #d8b46a;
-      --gold-bright: #f1d083;
-      --blue: #8fc7cf;
-      --line: rgba(216, 180, 106, 0.22);
-      --panel: rgba(3, 3, 10, 0.72);
+      --bg: #020208;
+      --ink: #efe7d2;
+      --muted: rgba(239, 231, 210, 0.44);
+      --dim: rgba(239, 231, 210, 0.2);
+      --gold: #d9b66c;
+      --gold-hot: #ffe6a3;
+      --blue: #8ad0dc;
     }
 
     * {
@@ -30,7 +28,7 @@
       overflow: hidden;
       background: var(--bg);
       color: var(--ink);
-      font-family: "Microsoft YaHei", "PingFang SC", "Noto Serif SC", "SimSun", serif;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
     }
 
     body::before {
@@ -40,19 +38,20 @@
       z-index: 1;
       pointer-events: none;
       background:
-        linear-gradient(90deg, rgba(3, 3, 10, 0.96) 0%, rgba(3, 3, 10, 0.78) 46%, rgba(3, 3, 10, 0.18) 100%),
-        radial-gradient(circle at 78% 46%, rgba(216, 180, 106, 0.16), transparent 34%),
-        radial-gradient(circle at 88% 34%, rgba(143, 199, 207, 0.12), transparent 30%);
+        radial-gradient(circle at 67% 45%, rgba(217, 182, 108, 0.12), transparent 34%),
+        radial-gradient(circle at 82% 30%, rgba(138, 208, 220, 0.11), transparent 28%),
+        linear-gradient(90deg, rgba(2, 2, 8, 0.96) 0%, rgba(2, 2, 8, 0.62) 31%, rgba(2, 2, 8, 0.04) 100%);
     }
 
     body::after {
       content: "";
       position: fixed;
-      inset: 5.6vh 3vw 5.8vh;
+      inset: 4.8vh 3vw;
       z-index: 1;
       pointer-events: none;
-      border-top: 1px solid rgba(216, 180, 106, 0.08);
-      border-bottom: 1px solid rgba(216, 180, 106, 0.08);
+      border-top: 1px solid rgba(217, 182, 108, 0.08);
+      border-bottom: 1px solid rgba(217, 182, 108, 0.08);
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.34);
     }
 
     canvas {
@@ -61,135 +60,78 @@
       z-index: 0;
       width: 100%;
       height: 100%;
-      background: #03030a;
+      background: #020208;
     }
 
-    .label {
+    .hud {
       position: fixed;
       z-index: 2;
-      left: clamp(28px, 5.8vw, 76px);
-      top: 50%;
-      width: min(485px, 38vw);
-      transform: translateY(-50%);
+      left: clamp(22px, 5.4vw, 72px);
+      top: clamp(28px, 10vh, 90px);
+      width: min(360px, 34vw);
+      pointer-events: auto;
     }
 
     .kicker {
       margin: 0 0 18px;
-      color: rgba(236, 227, 207, 0.34);
-      font-family: "Segoe UI", sans-serif;
+      color: rgba(239, 231, 210, 0.28);
       font-size: 10px;
-      letter-spacing: 0.56em;
+      letter-spacing: 0.52em;
       text-transform: uppercase;
     }
 
     h1 {
       margin: 0;
       color: var(--gold);
-      font-size: clamp(31px, 3.1vw, 48px);
+      font-family: "Noto Serif SC", "SimSun", serif;
+      font-size: clamp(28px, 3.1vw, 46px);
       font-weight: 400;
-      letter-spacing: 0.22em;
-      line-height: 1.12;
-    }
-
-    .roman {
-      margin: 10px 0 0;
-      color: rgba(216, 180, 106, 0.48);
-      font-family: "Segoe UI", sans-serif;
-      font-size: 10px;
-      letter-spacing: 0.52em;
-      text-transform: uppercase;
-    }
-
-    .rule {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 24px;
-      margin: 26px 0 20px;
-      color: rgba(236, 227, 207, 0.42);
-      font-size: 12px;
-    }
-
-    .rule::before {
-      content: "";
-      height: 1px;
-      background: linear-gradient(90deg, rgba(216, 180, 106, 0.52), transparent);
-    }
-
-    .current {
-      min-height: 184px;
-      padding-top: 18px;
-    }
-
-    .step {
-      margin: 0 0 16px;
-      color: var(--dim);
-      font-family: "Segoe UI", sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.38em;
-      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      line-height: 1.1;
     }
 
     .keyword {
-      margin: 0;
-      color: var(--ink);
-      font-size: clamp(36px, 4vw, 62px);
+      margin: clamp(44px, 10vh, 92px) 0 0;
+      min-height: 78px;
+      color: rgba(255, 246, 221, 0.94);
+      font-family: "Noto Serif SC", "SimSun", serif;
+      font-size: clamp(48px, 7vw, 92px);
       font-weight: 300;
       letter-spacing: 0.18em;
-      line-height: 1.05;
+      line-height: 1;
     }
 
-    .summary {
-      width: min(420px, 100%);
-      margin: 22px 0 0;
+    .whisper {
+      width: min(310px, 100%);
+      min-height: 54px;
+      margin: 18px 0 0;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.9;
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-    }
-
-    .path {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 20px 0 0;
-      padding: 0;
-      list-style: none;
-      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-    }
-
-    .path li {
-      border: 1px solid rgba(216, 180, 106, 0.18);
-      border-radius: 999px;
-      padding: 7px 11px;
-      color: rgba(236, 227, 207, 0.66);
-      background: rgba(255, 255, 255, 0.025);
-      font-size: 12px;
+      font-size: 13px;
+      line-height: 1.8;
     }
 
     .actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 28px;
+      gap: 10px;
+      margin-top: 26px;
     }
 
     button {
-      border: 1px solid rgba(216, 180, 106, 0.28);
-      border-radius: 0;
-      padding: 11px 18px;
+      border: 1px solid rgba(217, 182, 108, 0.24);
+      border-radius: 999px;
+      padding: 10px 15px;
       color: var(--ink);
-      background: rgba(255, 255, 255, 0.025);
+      background: rgba(255, 255, 255, 0.03);
       font: 13px "Microsoft YaHei", "PingFang SC", sans-serif;
-      letter-spacing: 0.08em;
       cursor: pointer;
+      backdrop-filter: blur(12px);
       transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
     }
 
     button:hover {
-      border-color: rgba(241, 208, 131, 0.72);
-      background: rgba(216, 180, 106, 0.1);
-      color: #fff4d4;
+      border-color: rgba(255, 230, 163, 0.72);
+      background: rgba(217, 182, 108, 0.1);
+      color: #fff2c8;
     }
 
     button:disabled {
@@ -200,107 +142,66 @@
     .timeline {
       position: fixed;
       z-index: 2;
-      left: clamp(28px, 5.8vw, 76px);
-      bottom: clamp(32px, 8vh, 74px);
-      width: min(500px, 42vw);
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 7px;
-      align-items: end;
+      left: clamp(22px, 5.4vw, 72px);
+      bottom: clamp(24px, 8vh, 70px);
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
 
-    .tick {
-      height: 48px;
-      border-left: 1px solid rgba(216, 180, 106, 0.18);
-      position: relative;
-      color: rgba(236, 227, 207, 0.34);
-      font: 10px "Segoe UI", sans-serif;
-      letter-spacing: 0.16em;
-      cursor: pointer;
-    }
-
-    .tick::before {
-      content: "";
-      position: absolute;
-      left: -3px;
-      bottom: 0;
-      width: 5px;
-      height: 5px;
+    .dot {
+      width: 7px;
+      height: 7px;
+      border: 1px solid rgba(217, 182, 108, 0.34);
       border-radius: 50%;
-      background: rgba(216, 180, 106, 0.24);
+      background: transparent;
+      padding: 0;
     }
 
-    .tick span {
-      position: absolute;
-      left: 7px;
-      bottom: -2px;
+    .dot.lit {
+      border-color: rgba(255, 230, 163, 0.98);
+      background: var(--gold-hot);
+      box-shadow: 0 0 18px rgba(255, 230, 163, 0.86);
     }
 
-    .tick.lit::before {
-      background: var(--gold-bright);
-      box-shadow: 0 0 16px rgba(241, 208, 131, 0.7);
+    .dot.active {
+      transform: scale(1.45);
     }
 
-    .tick.active {
-      border-left-color: rgba(241, 208, 131, 0.72);
-      color: rgba(241, 208, 131, 0.86);
+    .count {
+      margin-left: 4px;
+      color: rgba(239, 231, 210, 0.34);
+      font-size: 11px;
+      letter-spacing: 0.28em;
     }
 
-    .split {
+    .node-card {
       position: fixed;
       z-index: 2;
-      left: 50%;
-      top: 10vh;
-      bottom: 11vh;
-      width: 1px;
-      background: linear-gradient(180deg, transparent, rgba(216, 180, 106, 0.16), transparent);
-      opacity: 0.72;
-    }
-
-    .stage-note {
-      position: fixed;
-      z-index: 2;
-      right: clamp(22px, 4vw, 58px);
-      bottom: clamp(22px, 6vh, 54px);
-      color: rgba(236, 227, 207, 0.34);
-      font: 10px "Segoe UI", sans-serif;
-      letter-spacing: 0.36em;
-      text-transform: uppercase;
-    }
-
-    .cognition {
-      position: fixed;
-      z-index: 3;
-      right: clamp(28px, 5vw, 72px);
-      top: clamp(32px, 8vh, 80px);
-      width: min(340px, 31vw);
-      padding: 22px;
-      border: 1px solid rgba(216, 180, 106, 0.2);
-      background: rgba(3, 3, 10, 0.52);
+      right: clamp(20px, 4vw, 54px);
+      bottom: clamp(20px, 5.6vh, 52px);
+      width: min(280px, 30vw);
+      color: rgba(239, 231, 210, 0.5);
+      font-size: 12px;
+      line-height: 1.8;
       opacity: 0;
       transform: translateY(16px);
-      pointer-events: none;
-      transition: opacity 600ms ease, transform 600ms ease;
-      backdrop-filter: blur(12px);
+      transition: opacity 700ms ease, transform 700ms ease;
     }
 
-    .cognition.show {
+    .node-card.show {
       opacity: 1;
       transform: translateY(0);
     }
 
-    .cognition h2 {
-      margin: 0 0 12px;
+    .node-card strong {
+      display: block;
+      margin-bottom: 8px;
       color: var(--gold);
       font-size: 18px;
+      font-family: "Noto Serif SC", "SimSun", serif;
       font-weight: 400;
-      letter-spacing: 0.2em;
-    }
-
-    .cognition p {
-      margin: 0;
-      color: var(--muted);
-      font: 13px/1.85 "Microsoft YaHei", "PingFang SC", sans-serif;
+      letter-spacing: 0.18em;
     }
 
     @media (max-width: 860px) {
@@ -309,160 +210,97 @@
         overflow: auto;
       }
 
-      body::after,
-      .split,
-      .stage-note {
+      body::after {
         display: none;
       }
 
-      .label {
-        top: 28px;
-        left: 22px;
-        right: 22px;
+      .hud {
+        left: 20px;
+        right: 20px;
+        top: 24px;
         width: auto;
-        transform: none;
+      }
+
+      .keyword {
+        margin-top: 34px;
+        font-size: 52px;
+      }
+
+      .whisper {
+        max-width: 280px;
       }
 
       .timeline {
-        left: 22px;
-        right: 22px;
-        bottom: 22px;
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+      }
+
+      .node-card {
+        left: 20px;
+        right: 20px;
+        bottom: 58px;
         width: auto;
-      }
-
-      .cognition {
-        left: 22px;
-        right: 22px;
-        top: auto;
-        bottom: 92px;
-        width: auto;
-      }
-
-      h1 {
-        font-size: 34px;
-      }
-
-      .summary {
-        max-width: 330px;
       }
     }
   </style>
 </head>
 <body>
-  <canvas id="scene" aria-hidden="true"></canvas>
-  <div class="split"></div>
+  <canvas id="tree" aria-hidden="true"></canvas>
 
-  <main class="label">
-    <p class="kicker">MENTORSHIP MEMORY COLLECTION</p>
+  <main class="hud">
+    <p class="kicker">MENTOR COGNITION TREE</p>
     <h1>带教认知树</h1>
-    <p class="roman">COGNITION TREE OF GROWING INSIGHTS</p>
-    <div class="rule"><span id="era">记录序列 00</span></div>
-
-    <section class="current" aria-live="polite">
-      <p id="step" class="step">WAITING FOR FIRST FRUIT</p>
-      <h2 id="keyword" class="keyword">未点亮</h2>
-      <p id="summary" class="summary">点击右侧第一颗果实，或点击“点亮下一颗果实”，树会按你的记录顺序从下往上生长。每一次交流沉淀，都会成为一颗新的果实。</p>
-      <ul id="path" class="path"></ul>
-    </section>
-
+    <h2 id="keyword" class="keyword">未点亮</h2>
+    <p id="whisper" class="whisper">点击树上的第一颗光果，让这棵树从根部开始生长。</p>
     <div class="actions">
-      <button id="next">点亮下一颗果实</button>
-      <button id="replay">重新观看生长</button>
+      <button id="next">点亮下一颗</button>
+      <button id="replay">重生长</button>
     </div>
   </main>
 
-  <nav id="timeline" class="timeline" aria-label="记录时间线"></nav>
+  <nav id="timeline" class="timeline" aria-label="感悟时间线"></nav>
 
-  <aside id="cognition" class="cognition">
-    <h2>认知节点</h2>
-    <p>所有果实被点亮后，它们不再只是单独的回忆，而会彼此连接，凝结成你对带教的认知结构：判断力、表达方式、边界感、长期主义与行动信任。</p>
+  <aside id="nodeCard" class="node-card">
+    <strong>认知节点</strong>
+    所有果实被点亮后，枝干之间会被金色光流连接，最后凝结成你对带教的认知结构。
   </aside>
-
-  <div class="stage-note">click fruit / grow upward / connect as cognition nodes</div>
 
   <script>
     const records = [
-      {
-        keyword: "清醒",
-        short: "清",
-        scene: "那天我急着问方案怎么推进，你先让我回到目标本身：这个问题到底要解决什么。",
-        thinking: ["目标", "约束", "动作"],
-        lesson: "有效行动不是更快开始，而是先确认自己没有跑偏。"
-      },
-      {
-        keyword: "精准",
-        short: "准",
-        scene: "我给出一堆信息时，你没有全部展开，而是抓住最关键的那个变量继续追问。",
-        thinking: ["噪音", "变量", "验证"],
-        lesson: "复杂问题不一定要复杂处理，先找到真正改变结果的杠杆点。"
-      },
-      {
-        keyword: "耐心",
-        short: "耐",
-        scene: "我一开始没理解你的意思，你没有直接否定，而是换了一个例子重新讲。",
-        thinking: ["卡点", "换例子", "接上逻辑"],
-        lesson: "好的带教不是灌输答案，而是帮助别人完成理解。"
-      },
-      {
-        keyword: "边界",
-        short: "界",
-        scene: "讨论任务范围时，你提醒我要分清什么是必须完成，什么只是锦上添花。",
-        thinking: ["必须交付", "额外收益", "控制范围"],
-        lesson: "边界感不是保守，而是让重要的事情真的落地。"
-      },
-      {
-        keyword: "长远",
-        short: "远",
-        scene: "我只看到眼前任务，你提醒我这个动作会不会形成以后可复用的方法。",
-        thinking: ["眼前收益", "复用方法", "沉淀能力"],
-        lesson: "成长不是完成很多事，而是每次完成后都留下能力。"
-      },
-      {
-        keyword: "坦诚",
-        short: "诚",
-        scene: "你指出我方案里的问题时很直接，但也明确说明为什么这会影响结果。",
-        thinking: ["具体问题", "影响后果", "调整方向"],
-        lesson: "真正有帮助的反馈，应该让人知道下一步怎么变好。"
-      },
-      {
-        keyword: "结构",
-        short: "构",
-        scene: "你让我把想法从一段话拆成背景、问题、判断、行动四层。",
-        thinking: ["背景", "问题", "判断", "行动"],
-        lesson: "结构不是形式感，而是让别人更快进入同一个问题。"
-      },
-      {
-        keyword: "笃定",
-        short: "定",
-        scene: "当方向已经判断清楚时，你没有反复摇摆，而是推动我把事情做下去。",
-        thinking: ["想清前提", "接受不确定", "推进"],
-        lesson: "不是等完全确定才行动，而是知道为什么值得行动。"
-      }
+      { keyword: "清醒", short: "清", hint: "先回到目标，再判断动作。", thinking: ["目标", "约束", "动作"] },
+      { keyword: "精准", short: "准", hint: "在杂乱信息里抓住真正改变结果的变量。", thinking: ["噪音", "变量", "验证"] },
+      { keyword: "耐心", short: "耐", hint: "不是急着给答案，而是帮我接上理解。", thinking: ["卡点", "换例子", "理解"] },
+      { keyword: "边界", short: "界", hint: "先守住必须完成的事，再追求更漂亮。", thinking: ["交付", "收益", "范围"] },
+      { keyword: "长远", short: "远", hint: "一次任务结束后，方法应该继续留下来。", thinking: ["复用", "沉淀", "能力"] },
+      { keyword: "坦诚", short: "诚", hint: "直接指出问题，也给出可以改变的方向。", thinking: ["问题", "影响", "调整"] },
+      { keyword: "结构", short: "构", hint: "把混乱想法拆成可以推进的层次。", thinking: ["背景", "问题", "判断", "行动"] },
+      { keyword: "笃定", short: "定", hint: "想清楚之后，就给行动一点信任。", thinking: ["前提", "不确定", "推进"] }
     ];
 
-    const canvas = document.getElementById("scene");
+    const canvas = document.getElementById("tree");
     const ctx = canvas.getContext("2d");
+    const keywordEl = document.getElementById("keyword");
+    const whisperEl = document.getElementById("whisper");
     const nextButton = document.getElementById("next");
     const replayButton = document.getElementById("replay");
-    const keywordEl = document.getElementById("keyword");
-    const summaryEl = document.getElementById("summary");
-    const stepEl = document.getElementById("step");
-    const eraEl = document.getElementById("era");
-    const pathEl = document.getElementById("path");
     const timelineEl = document.getElementById("timeline");
-    const cognitionEl = document.getElementById("cognition");
+    const nodeCard = document.getElementById("nodeCard");
     const pointer = { x: -999, y: -999 };
 
+    let pixelRatio = 1;
     let particles = [];
-    let fruits = [];
+    let curves = [];
+    let roots = [];
+    let fruit = [];
     let stars = [];
-    let cognitionNodes = [];
+    let streamers = [];
+    let nodes = [];
     let litCount = 0;
     let selected = -1;
-    let targetGrow = 0.14;
-    let currentGrow = 0.14;
+    let grow = 0.15;
+    let targetGrow = 0.15;
     let finalStart = 0;
-    let pixelRatio = 1;
 
     function rand(min, max) {
       return min + Math.random() * (max - min);
@@ -472,223 +310,314 @@
       return Math.max(min, Math.min(max, value));
     }
 
-    function easeOutCubic(t) {
+    function ease(t) {
       return 1 - Math.pow(1 - t, 3);
     }
 
-    function pointOnBranch(x, y, angle, length, ratio) {
-      const twist = Math.sin(ratio * Math.PI * 1.2) * length * 0.11;
+    function bezier(a, b, c, d, t) {
+      const mt = 1 - t;
       return {
-        x: x + Math.cos(angle) * length * ratio + Math.cos(angle - Math.PI / 2) * twist,
-        y: y + Math.sin(angle) * length * ratio
+        x: mt * mt * mt * a.x + 3 * mt * mt * t * b.x + 3 * mt * t * t * c.x + t * t * t * d.x,
+        y: mt * mt * mt * a.y + 3 * mt * mt * t * b.y + 3 * mt * t * t * c.y + t * t * t * d.y
       };
     }
 
-    function addParticle(x, y, thickness, branchDepth, birthOffset = 0) {
-      const birth = clamp(1 - y / innerHeight + birthOffset, 0, 1);
+    function addDot(x, y, thickness, birth, tone, kind) {
       particles.push({
         x,
         y,
         baseX: x,
         baseY: y,
-        r: rand(0.48, 1.85) * clamp(thickness / 4.2, 0.58, 2.05),
-        a: rand(0.42, 1),
-        hue: branchDepth > 5 ? "gold" : Math.random() > 0.58 ? "blue" : "gold",
-        birth,
+        r: rand(0.34, 1.15) * clamp(thickness / 16, 0.42, 1.45),
+        a: kind === "trunk" ? rand(0.08, 0.28) : rand(0.16, 0.52),
+        birth: clamp(birth + rand(-0.025, 0.035), 0, 1),
+        tone,
+        kind,
         drift: rand(0, Math.PI * 2)
       });
     }
 
-    function branch(x, y, angle, length, depth, thickness, birthOffset) {
-      if (depth <= 0 || length < 16) return;
-      const steps = Math.max(16, Math.floor(length / 5));
-      let end = { x, y };
-
+    function dotAlongCurve(points, width, density, tone, kind, birthShift = 0) {
+      curves.push({ points, width, tone, kind, birth: birthShift });
+      const [a, b, c, d] = points;
+      const steps = Math.max(42, Math.round(density));
       for (let i = 0; i <= steps; i++) {
-        const ratio = i / steps;
-        const p = pointOnBranch(x, y, angle, length, ratio);
-        const dots = Math.max(2, Math.round(thickness * 2));
-        for (let d = 0; d < dots; d++) {
-          addParticle(
+        const t = i / steps;
+        const p = bezier(a, b, c, d, t);
+        const thickness = width * (1 - t * 0.68);
+        const dots = Math.max(3, Math.round(thickness * (kind === "trunk" ? 0.18 : 0.24)));
+        const birth = 1 - p.y / innerHeight + birthShift + t * 0.04;
+        for (let j = 0; j < dots; j++) {
+          addDot(
             p.x + rand(-thickness, thickness),
             p.y + rand(-thickness, thickness),
             thickness,
-            depth,
-            birthOffset + ratio * 0.035
+            birth,
+            tone,
+            kind
           );
         }
-        end = p;
       }
+      return d;
+    }
 
-      const spread = rand(0.32, 0.58);
-      const next = length * rand(0.62, 0.76);
+    function growBranch(start, angle, length, depth, width, birthShift) {
+      if (depth <= 0 || length < 28) return;
+      const end = {
+        x: start.x + Math.cos(angle) * length,
+        y: start.y + Math.sin(angle) * length
+      };
+      const bend = length * rand(0.18, 0.32);
+      const points = [
+        start,
+        { x: start.x + Math.cos(angle - 0.55) * bend, y: start.y + Math.sin(angle - 0.55) * bend },
+        { x: (start.x + end.x) / 2 + rand(-length * 0.24, length * 0.24), y: (start.y + end.y) / 2 + rand(-length * 0.12, length * 0.12) },
+        end
+      ];
+      dotAlongCurve(points, width, length / 3.5, depth > 5 ? "gold" : Math.random() > 0.45 ? "blue" : "gold", "branch", birthShift);
 
-      if (depth > 6) {
-        const low = pointOnBranch(x, y, angle, length, 0.36);
-        const mid = pointOnBranch(x, y, angle, length, 0.58);
-        branch(low.x, low.y, angle - spread * 1.35, next * 0.76, depth - 2, thickness * 0.55, birthOffset + 0.08);
-        branch(mid.x, mid.y, angle + spread * 1.18, next * 0.72, depth - 2, thickness * 0.52, birthOffset + 0.12);
-      }
-
-      branch(end.x, end.y, angle - spread, next, depth - 1, thickness * 0.72, birthOffset + 0.12);
-      branch(end.x, end.y, angle + spread * rand(0.72, 1.15), next * rand(0.86, 1.1), depth - 1, thickness * 0.68, birthOffset + 0.12);
-
+      const spread = rand(0.34, 0.72);
+      const nextLength = length * rand(0.58, 0.74);
+      growBranch(end, angle - spread, nextLength, depth - 1, width * 0.66, birthShift + 0.075);
+      growBranch(end, angle + spread * rand(0.78, 1.2), nextLength * rand(0.82, 1.12), depth - 1, width * 0.62, birthShift + 0.085);
       if (depth > 4) {
-        branch(end.x, end.y, angle + rand(-0.22, 0.22), next * 0.56, depth - 2, thickness * 0.48, birthOffset + 0.16);
+        growBranch(end, angle + rand(-0.26, 0.26), nextLength * 0.62, depth - 2, width * 0.46, birthShift + 0.11);
       }
     }
 
     function buildScene() {
       particles = [];
+      curves = [];
+      roots = [];
+      fruit = [];
       stars = [];
-      const mobile = innerWidth < 860;
-      const baseX = innerWidth * (mobile ? 0.72 : 0.76);
-      const baseY = innerHeight * 0.96;
-      const trunk = Math.min(innerHeight * 0.56, innerWidth * 0.38);
-      branch(baseX, baseY, -Math.PI / 2 - 0.06, trunk, 10, Math.max(5, innerWidth * 0.007), 0);
+      streamers = [];
+      nodes = [];
 
-      for (let i = 0; i < 180; i++) {
+      const mobile = innerWidth < 860;
+      const base = {
+        x: innerWidth * (mobile ? 0.66 : 0.68),
+        y: innerHeight * 1.05
+      };
+      const crownTop = innerHeight * 0.06;
+      const trunkHeight = innerHeight * 0.93;
+      const trunkWidth = Math.max(44, innerWidth * (mobile ? 0.05 : 0.058));
+
+      const trunkCurves = [
+        [
+          base,
+          { x: base.x - innerWidth * 0.05, y: innerHeight * 0.78 },
+          { x: base.x + innerWidth * 0.02, y: innerHeight * 0.38 },
+          { x: base.x - innerWidth * 0.02, y: crownTop }
+        ],
+        [
+          { x: base.x - trunkWidth * 0.35, y: base.y },
+          { x: base.x - innerWidth * 0.13, y: innerHeight * 0.72 },
+          { x: base.x - innerWidth * 0.08, y: innerHeight * 0.42 },
+          { x: base.x - innerWidth * 0.18, y: innerHeight * 0.16 }
+        ],
+        [
+          { x: base.x + trunkWidth * 0.28, y: base.y },
+          { x: base.x + innerWidth * 0.12, y: innerHeight * 0.68 },
+          { x: base.x + innerWidth * 0.08, y: innerHeight * 0.36 },
+          { x: base.x + innerWidth * 0.22, y: innerHeight * 0.12 }
+        ]
+      ];
+
+      trunkCurves.forEach((curve, index) => {
+        dotAlongCurve(curve, trunkWidth * (index === 0 ? 1 : 0.72), trunkHeight / 2.3, "gold", "trunk", index * 0.012);
+      });
+
+      const branchStarts = [
+        { x: base.x - innerWidth * 0.03, y: innerHeight * 0.66, a: -2.62, l: innerWidth * 0.28 },
+        { x: base.x + innerWidth * 0.02, y: innerHeight * 0.61, a: -0.62, l: innerWidth * 0.26 },
+        { x: base.x - innerWidth * 0.03, y: innerHeight * 0.48, a: -2.92, l: innerWidth * 0.34 },
+        { x: base.x + innerWidth * 0.02, y: innerHeight * 0.45, a: -0.32, l: innerWidth * 0.34 },
+        { x: base.x - innerWidth * 0.02, y: innerHeight * 0.31, a: -2.42, l: innerWidth * 0.3 },
+        { x: base.x + innerWidth * 0.01, y: innerHeight * 0.29, a: -0.82, l: innerWidth * 0.28 }
+      ];
+
+      branchStarts.forEach((b, i) => {
+        growBranch({ x: b.x, y: b.y }, b.a, b.l, 7, trunkWidth * 0.23, 0.14 + i * 0.035);
+      });
+
+      for (let i = 0; i < 240; i++) {
         stars.push({
-          x: rand(innerWidth * 0.46, innerWidth * 0.98),
-          y: rand(innerHeight * 0.06, innerHeight * 0.94),
+          x: rand(innerWidth * 0.34, innerWidth * 0.98),
+          y: rand(innerHeight * 0.04, innerHeight * 0.96),
           r: rand(0.25, 1.05),
-          a: rand(0.05, 0.28),
+          a: rand(0.04, 0.25),
           pulse: rand(0, Math.PI * 2)
         });
       }
 
-      const positions = mobile
-        ? [[0.62, 0.70], [0.72, 0.59], [0.63, 0.50], [0.80, 0.47], [0.70, 0.38], [0.86, 0.36], [0.76, 0.27], [0.90, 0.24]]
-        : [[0.60, 0.70], [0.68, 0.59], [0.61, 0.49], [0.78, 0.48], [0.69, 0.36], [0.86, 0.37], [0.76, 0.24], [0.91, 0.22]];
+      const fruitPositions = mobile
+        ? [[0.44, 0.72], [0.62, 0.63], [0.78, 0.57], [0.50, 0.49], [0.72, 0.43], [0.88, 0.34], [0.58, 0.28], [0.78, 0.18]]
+        : [[0.43, 0.73], [0.57, 0.61], [0.76, 0.56], [0.47, 0.45], [0.68, 0.39], [0.88, 0.34], [0.56, 0.23], [0.79, 0.16]];
 
-      fruits = records.map((record, index) => {
-        const [fx, fy] = positions[index];
-        const growAt = (index + 1) / records.length;
+      fruit = records.map((record, index) => {
+        const [fx, fy] = fruitPositions[index];
         return {
           x: innerWidth * fx,
           y: innerHeight * fy,
           baseX: innerWidth * fx,
           baseY: innerHeight * fy,
-          radius: Math.max(13, Math.min(innerWidth, innerHeight) * 0.018),
-          growAt,
+          radius: Math.max(15, Math.min(innerWidth, innerHeight) * 0.021),
+          growAt: clamp((index + 1) / records.length, 0.14, 1),
           pulse: rand(0, Math.PI * 2),
           record,
           index
         };
       });
 
-      cognitionNodes = records.map((record, index) => {
+      for (let i = 0; i < 80; i++) {
+        streamers.push({
+          offset: rand(0, 1),
+          speed: rand(0.032, 0.08),
+          side: rand(-1, 1),
+          radius: rand(0.8, 2.2),
+          hue: Math.random() > 0.35 ? "gold" : "blue"
+        });
+      }
+
+      nodes = records.map((record, index) => {
         const angle = (index / records.length) * Math.PI * 2 - Math.PI / 2;
-        const cx = innerWidth * (mobile ? 0.74 : 0.77);
-        const cy = innerHeight * 0.48;
-        const rx = innerWidth * (mobile ? 0.2 : 0.17);
-        const ry = innerHeight * 0.24;
         return {
-          x: cx + Math.cos(angle) * rx,
-          y: cy + Math.sin(angle) * ry,
+          x: innerWidth * 0.7 + Math.cos(angle) * innerWidth * 0.19,
+          y: innerHeight * 0.45 + Math.sin(angle) * innerHeight * 0.26,
           label: record.keyword,
           pulse: rand(0, Math.PI * 2)
         };
       });
     }
 
-    function drawParticle(p, t, visible) {
-      const appear = clamp((visible - p.birth) / 0.08, 0, 1);
+    function drawParticle(p, t) {
+      const appear = clamp((grow - p.birth) / 0.08, 0, 1);
       if (appear <= 0) return;
       const dx = pointer.x - p.baseX;
       const dy = pointer.y - p.baseY;
       const dist = Math.hypot(dx, dy);
-      const pull = dist < 130 ? (1 - dist / 130) * 1.8 : 0;
-      const shimmer = Math.sin(t * 1.7 + p.drift + p.baseY * 0.016);
-      const x = p.baseX + shimmer * 1.25 - dx * pull * 0.012;
-      const y = p.baseY + Math.cos(t * 1.2 + p.drift) * 0.85 - dy * pull * 0.012;
-      const alpha = p.a * easeOutCubic(appear);
+      const pull = dist < 150 ? (1 - dist / 150) * 2.4 : 0;
+      const flow = Math.sin(t * 1.9 + p.drift + p.baseY * 0.013);
+      const x = p.baseX + flow * (p.kind === "trunk" ? 1.5 : 2.8) - dx * pull * 0.012;
+      const y = p.baseY + Math.cos(t * 1.25 + p.drift) * 1.2 - dy * pull * 0.012;
+      const a = p.a * ease(appear);
       ctx.beginPath();
-      ctx.fillStyle = p.hue === "blue"
-        ? `rgba(143, 199, 207, ${alpha * 0.86})`
-        : `rgba(229, 193, 112, ${alpha})`;
-      ctx.arc(x, y, p.r * (0.4 + appear * 0.9), 0, Math.PI * 2);
+      ctx.fillStyle = p.tone === "blue"
+        ? `rgba(138, 208, 220, ${a * 0.82})`
+        : `rgba(226, 188, 108, ${a})`;
+      ctx.arc(x, y, p.r * (0.65 + appear * 0.7), 0, Math.PI * 2);
       ctx.fill();
     }
 
-    function drawFruit(fruit, t) {
-      const lit = fruit.index < litCount;
-      const next = fruit.index === litCount;
-      if (!lit && !next) return;
-      const growReady = currentGrow >= fruit.growAt - 0.02;
-      if (!growReady) return;
-
-      fruit.x = fruit.baseX + Math.cos(t * 1.1 + fruit.pulse) * 3;
-      fruit.y = fruit.baseY + Math.sin(t * 1.55 + fruit.pulse) * 4;
-      const hover = Math.hypot(pointer.x - fruit.x, pointer.y - fruit.y) < fruit.radius + 26;
-      const glow = lit ? 0.72 : hover ? 1.22 : 0.96 + Math.sin(t * 2.2 + fruit.pulse) * 0.16;
-      const halo = ctx.createRadialGradient(fruit.x, fruit.y, 0, fruit.x, fruit.y, fruit.radius * (next ? 5 : 3.5));
-      halo.addColorStop(0, `rgba(241, 208, 131, ${0.95 * glow})`);
-      halo.addColorStop(0.26, `rgba(216, 180, 106, ${0.34 * glow})`);
-      halo.addColorStop(1, "rgba(216, 180, 106, 0)");
-      ctx.fillStyle = halo;
-      ctx.beginPath();
-      ctx.arc(fruit.x, fruit.y, fruit.radius * (next ? 5 : 3.5), 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.fillStyle = lit ? "rgba(236, 203, 125, 0.92)" : "rgba(250, 226, 154, 1)";
-      ctx.arc(fruit.x, fruit.y, fruit.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(3, 3, 10, 0.82)";
-      ctx.font = `500 ${Math.max(11, fruit.radius * 0.78)}px "Microsoft YaHei", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(fruit.record.short, fruit.x, fruit.y + 0.5);
-    }
-
-    function drawConnections(t) {
-      if (litCount < records.length) return;
-      const age = finalStart ? clamp((performance.now() - finalStart) / 2600, 0, 1) : 0;
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      ctx.lineWidth = 1;
-      for (let i = 0; i < fruits.length - 1; i++) {
-        const a = fruits[i];
-        const b = fruits[i + 1];
-        ctx.strokeStyle = `rgba(241, 208, 131, ${0.12 + age * 0.32})`;
+    function drawCurves() {
+      curves.forEach((curve) => {
+        const endBirth = clamp(curve.birth + 0.22, 0, 1);
+        const appear = clamp((grow - endBirth) / 0.12, 0, 1);
+        if (appear <= 0) return;
+        const [a, b, c, d] = curve.points;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
-        const cx = (a.x + b.x) / 2 + Math.sin(t + i) * 18;
-        const cy = (a.y + b.y) / 2 - 22;
-        ctx.quadraticCurveTo(cx, cy, b.x, b.y);
+        ctx.bezierCurveTo(b.x, b.y, c.x, c.y, d.x, d.y);
+        ctx.lineWidth = Math.max(0.6, curve.width * (curve.kind === "trunk" ? 0.075 : 0.055));
+        ctx.strokeStyle = curve.tone === "blue"
+          ? `rgba(138, 208, 220, ${0.08 * appear})`
+          : `rgba(255, 230, 163, ${0.1 * appear})`;
+        ctx.stroke();
+      });
+    }
+
+    function drawStreams(t) {
+      const maxY = innerHeight * (1.08 - grow * 1.02);
+      streamers.forEach((s) => {
+        let phase = (s.offset + t * s.speed) % 1;
+        const y = innerHeight * 1.04 - phase * innerHeight * 0.96;
+        if (y < maxY) return;
+        const trunkX = innerWidth * 0.68 + Math.sin(phase * Math.PI * 4 + s.side) * innerWidth * 0.035;
+        const spread = Math.max(0, (0.62 - phase)) * innerWidth * 0.42 * s.side;
+        const x = trunkX + spread + Math.sin(t * 2 + s.offset * 9) * 12;
+        const alpha = Math.sin(phase * Math.PI) * 0.9;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, s.radius * 9);
+        gradient.addColorStop(0, s.hue === "gold" ? `rgba(255, 230, 163, ${alpha})` : `rgba(138, 208, 220, ${alpha * 0.75})`);
+        gradient.addColorStop(1, "rgba(255, 230, 163, 0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, s.radius * 9, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawFruit(f, t) {
+      const visible = f.index < litCount || f.index === litCount;
+      if (!visible || grow < f.growAt - 0.02) return;
+      const lit = f.index < litCount;
+      f.x = f.baseX + Math.cos(t + f.pulse) * 4;
+      f.y = f.baseY + Math.sin(t * 1.4 + f.pulse) * 5;
+      const hover = Math.hypot(pointer.x - f.x, pointer.y - f.y) < f.radius + 30;
+      const glow = lit ? 0.72 : hover ? 1.34 : 0.98 + Math.sin(t * 2.1 + f.pulse) * 0.2;
+      const halo = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.radius * 5.6);
+      halo.addColorStop(0, `rgba(255, 230, 163, ${0.92 * glow})`);
+      halo.addColorStop(0.32, `rgba(226, 188, 108, ${0.32 * glow})`);
+      halo.addColorStop(1, "rgba(226, 188, 108, 0)");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.radius * 5.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = lit ? "rgba(231, 196, 117, 0.92)" : "rgba(255, 233, 170, 1)";
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(2, 2, 8, 0.84)";
+      ctx.font = `500 ${Math.max(12, f.radius * 0.78)}px "Microsoft YaHei", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(f.record.short, f.x, f.y + 0.5);
+    }
+
+    function drawFinal(t) {
+      if (litCount < records.length) return;
+      const age = finalStart ? clamp((performance.now() - finalStart) / 3200, 0, 1) : 0;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < fruit.length - 1; i++) {
+        const a = fruit[i];
+        const b = fruit[i + 1];
+        ctx.strokeStyle = `rgba(255, 230, 163, ${0.1 + age * 0.28})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.quadraticCurveTo((a.x + b.x) / 2 + Math.sin(t + i) * 38, (a.y + b.y) / 2 - 42, b.x, b.y);
         ctx.stroke();
       }
 
       if (age > 0.45) {
-        const graphAlpha = clamp((age - 0.45) / 0.55, 0, 1);
-        for (let i = 0; i < cognitionNodes.length; i++) {
-          for (let j = i + 1; j < cognitionNodes.length; j++) {
+        const alpha = clamp((age - 0.45) / 0.55, 0, 1);
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
             if ((i + j) % 3 !== 0 && Math.abs(i - j) > 2) continue;
-            ctx.strokeStyle = `rgba(241, 208, 131, ${0.08 * graphAlpha})`;
+            ctx.strokeStyle = `rgba(255, 230, 163, ${0.07 * alpha})`;
             ctx.beginPath();
-            ctx.moveTo(cognitionNodes[i].x, cognitionNodes[i].y);
-            ctx.lineTo(cognitionNodes[j].x, cognitionNodes[j].y);
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
             ctx.stroke();
           }
         }
-        cognitionNodes.forEach((node) => {
-          const pulse = 0.75 + Math.sin(t * 2 + node.pulse) * 0.18;
-          ctx.fillStyle = `rgba(241, 208, 131, ${0.82 * graphAlpha * pulse})`;
+        nodes.forEach((n) => {
+          const pulse = 0.8 + Math.sin(t * 2 + n.pulse) * 0.2;
+          ctx.fillStyle = `rgba(255, 230, 163, ${0.84 * alpha * pulse})`;
           ctx.beginPath();
-          ctx.arc(node.x, node.y, 4.5 + pulse * 1.5, 0, Math.PI * 2);
+          ctx.arc(n.x, n.y, 5 + pulse * 2, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = `rgba(236, 227, 207, ${0.72 * graphAlpha})`;
+          ctx.fillStyle = `rgba(239, 231, 210, ${0.6 * alpha})`;
           ctx.font = '13px "Microsoft YaHei", sans-serif';
           ctx.textAlign = "center";
-          ctx.fillText(node.label, node.x, node.y + 25);
+          ctx.fillText(n.label, n.x, n.y + 26);
         });
       }
 
-      const flare = ctx.createRadialGradient(innerWidth * 0.76, innerHeight * 0.48, 20, innerWidth * 0.76, innerHeight * 0.48, innerWidth * 0.28);
-      flare.addColorStop(0, `rgba(241, 208, 131, ${0.08 * age})`);
-      flare.addColorStop(1, "rgba(241, 208, 131, 0)");
+      const flare = ctx.createRadialGradient(innerWidth * 0.68, innerHeight * 0.45, 20, innerWidth * 0.68, innerHeight * 0.45, innerWidth * 0.48);
+      flare.addColorStop(0, `rgba(255, 230, 163, ${0.11 * age})`);
+      flare.addColorStop(1, "rgba(255, 230, 163, 0)");
       ctx.fillStyle = flare;
       ctx.fillRect(0, 0, innerWidth, innerHeight);
       ctx.restore();
@@ -696,21 +625,23 @@
 
     function draw(time) {
       const t = time * 0.001;
-      currentGrow += (targetGrow - currentGrow) * 0.055;
+      grow += (targetGrow - grow) * 0.045;
       ctx.clearRect(0, 0, innerWidth, innerHeight);
 
-      stars.forEach((star) => {
+      stars.forEach((s) => {
+        ctx.fillStyle = `rgba(239, 231, 210, ${s.a + Math.sin(t + s.pulse) * 0.03})`;
         ctx.beginPath();
-        ctx.fillStyle = `rgba(236, 227, 207, ${star.a + Math.sin(t + star.pulse) * 0.035})`;
-        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
       });
 
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      particles.forEach((p) => drawParticle(p, t, currentGrow));
-      drawConnections(t);
-      fruits.forEach((fruit) => drawFruit(fruit, t));
+      drawCurves();
+      particles.forEach((p) => drawParticle(p, t));
+      drawStreams(t);
+      drawFinal(t);
+      fruit.forEach((f) => drawFruit(f, t));
       ctx.restore();
 
       requestAnimationFrame(draw);
@@ -719,78 +650,70 @@
     function renderTimeline() {
       timelineEl.innerHTML = "";
       records.forEach((record, index) => {
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = `tick ${index < litCount ? "lit" : ""} ${index === selected ? "active" : ""}`;
-        item.innerHTML = `<span>${String(index + 1).padStart(2, "0")}</span>`;
-        item.title = record.keyword;
-        item.addEventListener("click", () => {
+        const dot = document.createElement("button");
+        dot.className = `dot ${index < litCount ? "lit" : ""} ${index === selected ? "active" : ""}`;
+        dot.type = "button";
+        dot.title = record.keyword;
+        dot.addEventListener("click", () => {
           if (index < litCount) selectRecord(index);
         });
-        timelineEl.appendChild(item);
+        timelineEl.appendChild(dot);
       });
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = `${String(litCount).padStart(2, "0")} / ${String(records.length).padStart(2, "0")}`;
+      timelineEl.appendChild(count);
     }
 
     function selectRecord(index) {
       selected = index;
       const record = records[index];
-      eraEl.textContent = `记录序列 ${String(index + 1).padStart(2, "0")} / ${String(records.length).padStart(2, "0")}`;
-      stepEl.textContent = `INSIGHT NODE ${String(index + 1).padStart(2, "0")}`;
       keywordEl.textContent = record.keyword;
-      summaryEl.textContent = `${record.scene} ${record.lesson}`;
-      pathEl.innerHTML = "";
-      record.thinking.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        pathEl.appendChild(li);
-      });
+      whisperEl.textContent = record.hint;
       renderTimeline();
     }
 
     function lightNext() {
       if (litCount >= records.length) return;
       litCount += 1;
-      targetGrow = clamp(litCount / records.length + 0.03, 0.14, 1);
+      targetGrow = clamp(litCount / records.length + 0.08, 0.15, 1);
       selectRecord(litCount - 1);
       if (litCount === records.length) {
         nextButton.disabled = true;
-        nextButton.textContent = "认知节点已凝结";
+        nextButton.textContent = "已凝结";
         finalStart = performance.now();
-        window.setTimeout(() => cognitionEl.classList.add("show"), 900);
+        setTimeout(() => nodeCard.classList.add("show"), 1000);
       }
     }
 
     function reset() {
       litCount = 0;
       selected = -1;
-      targetGrow = 0.14;
-      currentGrow = 0.14;
+      grow = 0.15;
+      targetGrow = 0.15;
       finalStart = 0;
-      nextButton.disabled = false;
-      nextButton.textContent = "点亮下一颗果实";
-      cognitionEl.classList.remove("show");
-      eraEl.textContent = "记录序列 00";
-      stepEl.textContent = "WAITING FOR FIRST FRUIT";
       keywordEl.textContent = "未点亮";
-      summaryEl.textContent = "点击右侧第一颗果实，或点击“点亮下一颗果实”，树会按你的记录顺序从下往上生长。每一次交流沉淀，都会成为一颗新的果实。";
-      pathEl.innerHTML = "";
+      whisperEl.textContent = "点击树上的第一颗光果，让这棵树从根部开始生长。";
+      nextButton.disabled = false;
+      nextButton.textContent = "点亮下一颗";
+      nodeCard.classList.remove("show");
       renderTimeline();
     }
 
     function fruitAt(x, y) {
-      return fruits.find((fruit) => {
-        const visible = fruit.index < litCount || fruit.index === litCount;
-        return visible && Math.hypot(x - fruit.x, y - fruit.y) < fruit.radius + 28;
+      return fruit.find((f) => {
+        const visible = f.index < litCount || f.index === litCount;
+        return visible && Math.hypot(x - f.x, y - f.y) < f.radius + 32;
       });
     }
 
     canvas.addEventListener("click", (event) => {
-      const fruit = fruitAt(event.clientX, event.clientY);
-      if (!fruit) return;
-      if (fruit.index === litCount) {
+      const f = fruitAt(event.clientX, event.clientY);
+      if (!f) return;
+      if (f.index === litCount) {
         lightNext();
-      } else if (fruit.index < litCount) {
-        selectRecord(fruit.index);
+      } else if (f.index < litCount) {
+        selectRecord(f.index);
       }
     });
 
@@ -801,7 +724,8 @@
 
     nextButton.addEventListener("click", lightNext);
     replayButton.addEventListener("click", reset);
-    window.addEventListener("resize", () => {
+
+    function resize() {
       pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(innerWidth * pixelRatio);
       canvas.height = Math.floor(innerHeight * pixelRatio);
@@ -809,15 +733,10 @@
       canvas.style.height = innerHeight + "px";
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       buildScene();
-    });
+    }
 
-    pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(innerWidth * pixelRatio);
-    canvas.height = Math.floor(innerHeight * pixelRatio);
-    canvas.style.width = innerWidth + "px";
-    canvas.style.height = innerHeight + "px";
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    buildScene();
+    window.addEventListener("resize", resize);
+    resize();
     reset();
     requestAnimationFrame(draw);
   </script>
