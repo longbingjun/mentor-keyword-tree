@@ -1,0 +1,319 @@
+:root {
+  color-scheme: dark;
+  --bg: #020208;
+  --ink: #f4ead2;
+  --muted: rgba(244, 234, 210, 0.48);
+  --dim: rgba(244, 234, 210, 0.16);
+  --gold: #d9b66c;
+  --hot: #ffe6a3;
+  --cyan: #86dce5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.experience {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 73% 42%, rgba(255, 230, 163, 0.1), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(134, 220, 229, 0.13), transparent 26%),
+    #020208;
+}
+
+.experience::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(2, 2, 8, 0.98) 0%, rgba(2, 2, 8, 0.82) 28%, rgba(2, 2, 8, 0.08) 70%, transparent 100%),
+    linear-gradient(180deg, rgba(2, 2, 8, 0.28), transparent 24%, rgba(2, 2, 8, 0.34));
+}
+
+.experience::after {
+  content: "";
+  position: fixed;
+  inset: 5vh 3vw;
+  z-index: 1;
+  border-top: 1px solid rgba(217, 182, 108, 0.08);
+  border-bottom: 1px solid rgba(217, 182, 108, 0.08);
+  pointer-events: none;
+}
+
+.tree-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.tree-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.hud {
+  position: fixed;
+  z-index: 2;
+  left: clamp(24px, 5vw, 72px);
+  top: clamp(28px, 9vh, 86px);
+  width: min(390px, 34vw);
+}
+
+.kicker {
+  margin: 0 0 18px;
+  color: rgba(244, 234, 210, 0.28);
+  font-size: 10px;
+  letter-spacing: 0.52em;
+}
+
+h1 {
+  margin: 0;
+  color: var(--gold);
+  font-family: "Noto Serif SC", "SimSun", serif;
+  font-size: clamp(30px, 3.2vw, 48px);
+  font-weight: 400;
+  letter-spacing: 0.22em;
+}
+
+.meter {
+  width: min(330px, 100%);
+  height: 1px;
+  margin: 28px 0 clamp(44px, 8vh, 74px);
+  overflow: hidden;
+  background: rgba(217, 182, 108, 0.13);
+}
+
+.meter span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(217, 182, 108, 0.1), rgba(255, 230, 163, 0.95));
+  box-shadow: 0 0 18px rgba(255, 230, 163, 0.65);
+  transition: transform 900ms ease;
+}
+
+.memory {
+  min-height: 290px;
+}
+
+.date {
+  color: rgba(134, 220, 229, 0.56);
+  font-size: 11px;
+  letter-spacing: 0.34em;
+}
+
+.memory h2 {
+  margin: 12px 0 16px;
+  color: rgba(255, 246, 221, 0.96);
+  font-family: "Noto Serif SC", "SimSun", serif;
+  font-size: clamp(54px, 7vw, 96px);
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  line-height: 1;
+}
+
+.memory p {
+  width: min(340px, 100%);
+  margin: 0;
+  color: rgba(244, 234, 210, 0.7);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.memory dl {
+  width: min(360px, 100%);
+  margin: 26px 0 0;
+}
+
+.memory div {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(217, 182, 108, 0.11);
+}
+
+.memory dt {
+  color: rgba(217, 182, 108, 0.74);
+  font-size: 12px;
+}
+
+.memory dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.intro p {
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.actions button {
+  border: 1px solid rgba(217, 182, 108, 0.24);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.actions button:hover:not(:disabled) {
+  border-color: rgba(255, 230, 163, 0.72);
+  background: rgba(217, 182, 108, 0.1);
+  color: #fff2c8;
+}
+
+.actions button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.timeline {
+  position: fixed;
+  z-index: 2;
+  left: clamp(24px, 5vw, 72px);
+  bottom: clamp(24px, 7vh, 64px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timeline-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 1px solid rgba(217, 182, 108, 0.34);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.timeline-dot.lit {
+  border-color: rgba(255, 230, 163, 0.98);
+  background: var(--hot);
+  box-shadow: 0 0 18px rgba(255, 230, 163, 0.86);
+}
+
+.timeline-dot.active {
+  transform: scale(1.5);
+}
+
+.timeline span {
+  margin-left: 4px;
+  color: rgba(244, 234, 210, 0.34);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+}
+
+.node-panel {
+  position: fixed;
+  right: clamp(22px, 4vw, 58px);
+  bottom: clamp(24px, 6vh, 58px);
+  z-index: 2;
+  width: min(320px, 28vw);
+}
+
+.node-panel strong {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--gold);
+  font-family: "Noto Serif SC", "SimSun", serif;
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+}
+
+.node-panel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.node-panel span {
+  border: 1px solid rgba(217, 182, 108, 0.18);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: rgba(244, 234, 210, 0.62);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .experience::before {
+    background:
+      linear-gradient(180deg, rgba(2, 2, 8, 0.94) 0%, rgba(2, 2, 8, 0.48) 45%, rgba(2, 2, 8, 0.08) 100%);
+  }
+
+  .experience::after {
+    display: none;
+  }
+
+  .hud {
+    left: 20px;
+    right: 20px;
+    top: 22px;
+    width: auto;
+  }
+
+  .meter {
+    margin-bottom: 28px;
+  }
+
+  .memory {
+    min-height: 250px;
+  }
+
+  .memory h2 {
+    font-size: 54px;
+  }
+
+  .memory dl {
+    display: none;
+  }
+
+  .timeline {
+    left: 20px;
+    right: 20px;
+    bottom: 18px;
+  }
+
+  .node-panel {
+    left: 20px;
+    right: 20px;
+    bottom: 58px;
+    width: auto;
+  }
+}
