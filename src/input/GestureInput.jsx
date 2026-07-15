@@ -8,23 +8,54 @@ function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+function withTimeout(promise, timeoutMs) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error("gesture-model-timeout")), timeoutMs);
+    })
+  ]);
+}
+
 export function GestureInput({ enabled, onClose }) {
   const videoRef = useRef(null);
   const cursorRef = useRef(null);
   const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("正在唤醒手势感应");
+  const [targetIndex, setTargetIndex] = useState(null);
 
   useEffect(() => {
     if (!enabled) return undefined;
+
+    setStatus("loading");
+    setMessage("正在唤醒手势感应");
+    setTargetIndex(null);
 
     let stream;
     let handLandmarker;
     let frameId = 0;
     let stopped = false;
+    let cameraReady = false;
     let lastVideoTime = -1;
     let wasPinching = false;
     let lastSelectAt = 0;
+    let feedbackTimer = 0;
     const smooth = { x: window.innerWidth * 0.72, y: window.innerHeight * 0.5 };
+
+    function onGestureTarget(event) {
+      const nextTarget = event.detail.index;
+      setTargetIndex(nextTarget);
+      if (cursorRef.current) cursorRef.current.dataset.target = String(nextTarget !== null);
+    }
+
+    function onGesturePicked() {
+      setStatus("picked");
+      setMessage("摘取成功，果实正在点亮");
+      window.clearTimeout(feedbackTimer);
+      feedbackTimer = window.setTimeout(() => {
+        if (!stopped) setStatus("ready");
+      }, 1100);
+    }
 
     async function start() {
       try {
@@ -41,10 +72,11 @@ export function GestureInput({ enabled, onClose }) {
         const video = videoRef.current;
         video.srcObject = stream;
         await video.play();
+        cameraReady = true;
 
-        const visionModule = await import(/* @vite-ignore */ TASKS_VISION_URL);
-        const vision = await visionModule.FilesetResolver.forVisionTasks(WASM_ROOT);
-        handLandmarker = await visionModule.HandLandmarker.createFromOptions(vision, {
+        const visionModule = await withTimeout(import(/* @vite-ignore */ TASKS_VISION_URL), 15000);
+        const vision = await withTimeout(visionModule.FilesetResolver.forVisionTasks(WASM_ROOT), 15000);
+        handLandmarker = await withTimeout(visionModule.HandLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: MODEL_URL,
             delegate: "GPU"
@@ -54,7 +86,7 @@ export function GestureInput({ enabled, onClose }) {
           minHandDetectionConfidence: 0.58,
           minHandPresenceConfidence: 0.58,
           minTrackingConfidence: 0.55
-        });
+        }), 20000);
 
         if (stopped) return;
         setStatus("ready");
@@ -64,7 +96,7 @@ export function GestureInput({ enabled, onClose }) {
         if (stopped) return;
         console.error("Gesture mode failed to start", error);
         setStatus("error");
-        setMessage("未能开启摄像头，请使用点击体验");
+        setMessage(cameraReady ? "手势模型加载失败，请检查网络后重试" : "未能开启摄像头，请检查浏览器权限");
       }
     }
 
@@ -73,7 +105,15 @@ export function GestureInput({ enabled, onClose }) {
       const video = videoRef.current;
       if (video?.readyState >= 2 && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
-        const result = handLandmarker.detectForVideo(video, performance.now());
+        let result;
+        try {
+          result = handLandmarker.detectForVideo(video, performance.now());
+        } catch (error) {
+          console.error("Gesture detection failed", error);
+          setStatus("error");
+          setMessage("手势识别运行失败，请关闭后重试");
+          return;
+        }
         const landmarks = result.landmarks?.[0];
 
         if (landmarks) {
@@ -84,8 +124,9 @@ export function GestureInput({ enabled, onClose }) {
           smooth.x += (targetX - smooth.x) * 0.34;
           smooth.y += (targetY - smooth.y) * 0.34;
 
-          const pinchDistance = distance(indexTip, thumbTip);
-          const isPinching = wasPinching ? pinchDistance < 0.082 : pinchDistance < 0.055;
+          const palmWidth = Math.max(distance(landmarks[5], landmarks[17]), 0.001);
+          const pinchRatio = distance(indexTip, thumbTip) / palmWidth;
+          const isPinching = wasPinching ? pinchRatio < 0.72 : pinchRatio < 0.52;
           const cursor = cursorRef.current;
           if (cursor) {
             cursor.style.opacity = "1";
@@ -115,11 +156,16 @@ export function GestureInput({ enabled, onClose }) {
       frameId = requestAnimationFrame(detect);
     }
 
+    window.addEventListener("mentor:gesturetarget", onGestureTarget);
+    window.addEventListener("mentor:gesturepicked", onGesturePicked);
     start();
 
     return () => {
       stopped = true;
       cancelAnimationFrame(frameId);
+      window.clearTimeout(feedbackTimer);
+      window.removeEventListener("mentor:gesturetarget", onGestureTarget);
+      window.removeEventListener("mentor:gesturepicked", onGesturePicked);
       handLandmarker?.close();
       stream?.getTracks().forEach((track) => track.stop());
       window.dispatchEvent(new CustomEvent("mentor:gestureleave"));
@@ -128,12 +174,20 @@ export function GestureInput({ enabled, onClose }) {
 
   if (!enabled) return null;
 
+  const statusMessage = status === "searching"
+    ? "已启动摄像头，请让手掌进入画面"
+    : status === "ready" && targetIndex !== null
+      ? "已对准果实，捏合拇指与食指"
+      : status === "ready"
+        ? "移动食指，对准正在发光的果实"
+        : message;
+
   return (
     <aside className={`gesture-dock is-${status}`} aria-live="polite">
       <video ref={videoRef} muted playsInline aria-hidden="true" />
       <div className="gesture-status">
         <i aria-hidden="true" />
-        <span>{status === "searching" ? "让手掌进入画面" : message}</span>
+        <span>{statusMessage}</span>
       </div>
       <button type="button" onClick={onClose} aria-label="关闭手势模式">×</button>
       <div ref={cursorRef} className="gesture-cursor" aria-hidden="true"><span /></div>

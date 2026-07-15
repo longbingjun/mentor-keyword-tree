@@ -255,6 +255,7 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     finalCamera: { value: 0 },
     finalGlow: { value: 0 },
     hoveredIndex: null,
+    lastGestureTarget: null,
     fruitMeshes: [],
     memoryMeshes: [],
     nodeMeshes: [],
@@ -543,11 +544,13 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
       const fruit = fruitAt(clientX, clientY);
       stateRef.current.hoveredIndex = fruit?.userData.index ?? null;
       renderer.domElement.style.cursor = fruit ? "pointer" : "default";
+      return fruit;
     }
 
     function selectAt(clientX, clientY) {
       const fruit = fruitAt(clientX, clientY);
       if (fruit) onFruitSelect(fruit.userData.index);
+      return fruit;
     }
 
     function onPointerMove(event) {
@@ -564,11 +567,31 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     }
 
     function onGestureMove(event) {
-      hoverAt(event.detail.clientX, event.detail.clientY);
+      const fruit = hoverAt(event.detail.clientX, event.detail.clientY);
+      const nextTarget = fruit?.userData.index ?? null;
+      if (nextTarget !== stateRef.current.lastGestureTarget) {
+        stateRef.current.lastGestureTarget = nextTarget;
+        window.dispatchEvent(new CustomEvent("mentor:gesturetarget", {
+          detail: { index: nextTarget }
+        }));
+      }
     }
 
     function onGestureSelect(event) {
-      selectAt(event.detail.clientX, event.detail.clientY);
+      const fruit = selectAt(event.detail.clientX, event.detail.clientY);
+      if (fruit) {
+        window.dispatchEvent(new CustomEvent("mentor:gesturepicked", {
+          detail: { index: fruit.userData.index }
+        }));
+      }
+    }
+
+    function onGestureLeave() {
+      onPointerLeave();
+      stateRef.current.lastGestureTarget = null;
+      window.dispatchEvent(new CustomEvent("mentor:gesturetarget", {
+        detail: { index: null }
+      }));
     }
 
     function onResize() {
@@ -582,7 +605,7 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     window.addEventListener("resize", onResize);
     window.addEventListener("mentor:gesturemove", onGestureMove);
     window.addEventListener("mentor:gestureselect", onGestureSelect);
-    window.addEventListener("mentor:gestureleave", onPointerLeave);
+    window.addEventListener("mentor:gestureleave", onGestureLeave);
     renderer.domElement.addEventListener("pointermove", onPointerMove);
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
     renderer.domElement.addEventListener("pointerleave", onPointerLeave);
@@ -642,7 +665,7 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
       window.removeEventListener("resize", onResize);
       window.removeEventListener("mentor:gesturemove", onGestureMove);
       window.removeEventListener("mentor:gestureselect", onGestureSelect);
-      window.removeEventListener("mentor:gestureleave", onPointerLeave);
+      window.removeEventListener("mentor:gestureleave", onGestureLeave);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
