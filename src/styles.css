@@ -154,12 +154,18 @@ textarea:focus-visible {
   text-shadow: 0 0 42px rgba(255, 237, 170, 0.08);
 }
 
-.gift-cover > button {
+.gift-entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 24px;
+}
+
+.gift-entry-actions > button {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 156px;
-  margin-left: 24px;
   padding: 8px 9px 8px 18px;
   border: 1px solid rgba(217, 185, 111, 0.35);
   border-radius: 999px;
@@ -169,13 +175,13 @@ textarea:focus-visible {
   transition: width 350ms ease, border-color 250ms ease, background 250ms ease;
 }
 
-.gift-cover > button:hover {
+.gift-entry-actions > button:hover {
   width: 170px;
   border-color: rgba(255, 237, 170, 0.82);
   background: rgba(217, 185, 111, 0.08);
 }
 
-.gift-cover > button i,
+.gift-entry-actions .click-entry i,
 .primary-action i {
   display: grid;
   width: 28px;
@@ -186,6 +192,31 @@ textarea:focus-visible {
   background: var(--hot);
   box-shadow: 0 0 22px rgba(255, 237, 170, 0.32);
   font-style: normal;
+}
+
+.gift-entry-actions .gesture-entry {
+  width: 132px;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-right: 16px;
+  border-color: rgba(138, 223, 228, 0.34);
+  color: rgba(225, 252, 252, 0.82);
+}
+
+.gift-entry-actions .gesture-entry:hover {
+  width: 144px;
+  border-color: rgba(138, 223, 228, 0.82);
+  background: rgba(138, 223, 228, 0.08);
+}
+
+.gift-entry-actions .gesture-entry i,
+.gesture-action > i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 13px rgba(138, 223, 228, 0.85);
 }
 
 .gift-cover > small {
@@ -391,6 +422,29 @@ textarea:focus-visible {
   background: transparent;
   font-size: 16px;
 }
+
+.gesture-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 39px;
+  padding: 0 13px;
+  border: 1px solid rgba(138, 223, 228, 0.34);
+  border-radius: 999px;
+  color: rgba(225, 252, 252, 0.76);
+  background: rgba(138, 223, 228, 0.055);
+  font-size: 10px;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.gesture-action:hover,
+.gesture-action.active {
+  border-color: rgba(138, 223, 228, 0.82);
+  background: rgba(138, 223, 228, 0.11);
+  box-shadow: 0 0 22px rgba(138, 223, 228, 0.1);
+}
+
+.gesture-action.active > i { animation: status-pulse 1.4s ease-in-out infinite; }
 
 .experience-toolbar {
   position: fixed;
@@ -783,7 +837,8 @@ textarea:focus-visible {
 
   .gift-cover::after { left: 24px; top: 12vh; bottom: 16vh; }
   .gift-cover h1 { margin-left: 18px; font-size: 44px; line-height: 1.4; }
-  .gift-cover > p, .gift-cover > button, .gift-cover > small { margin-left: 20px; }
+  .gift-cover > p, .gift-cover > small { margin-left: 20px; }
+  .gift-entry-actions { margin-left: 20px; }
   .gift-mark { margin-left: 20px; }
 
   .hud { left: 20px; right: 20px; top: 20px; width: auto; }
@@ -826,6 +881,8 @@ textarea:focus-visible {
   .phase-label { display: none; }
   .memory h2 { font-size: 43px; }
   .primary-action { min-width: 174px; }
+  .gift-entry-actions { align-items: flex-start; flex-direction: column; }
+  .gift-entry-actions .gesture-entry { width: 156px; }
   .input-opener small { display: none; }
   .timeline-dot:nth-of-type(n + 11) { display: none; }
   .gift-cover h1 { font-size: 40px; }

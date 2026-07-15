@@ -151,26 +151,23 @@ function App() {
             <div className="gift-mark" aria-hidden="true"><i /><span /></div>
             <p>FOR MY MENTOR</p>
             <h1>一棵因你<br />生长的树</h1>
-            <button type="button" onClick={() => setEntered(true)}>
-              <span>开启</span><i aria-hidden="true">↗</i>
-            </button>
+            <div className="gift-entry-actions">
+              <button type="button" className="click-entry" onClick={() => setEntered(true)}>
+                <span>点击进入</span><i aria-hidden="true">↗</i>
+              </button>
+              <button
+                type="button"
+                className="gesture-entry"
+                onClick={() => {
+                  setEntered(true);
+                  setGestureEnabled(true);
+                }}
+              >
+                <i aria-hidden="true" /><span>手势进入</span>
+              </button>
+            </div>
             <small>桌面端或横屏观看更完整</small>
           </motion.section>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {entered && !isFinale && (
-          <motion.div className="experience-toolbar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <span>交互方式</span>
-            <button
-              type="button"
-              className={gestureEnabled ? "active" : ""}
-              onClick={() => setGestureEnabled((value) => !value)}
-            >
-              <i aria-hidden="true" />{gestureEnabled ? "手势感应中" : "开启手势"}
-            </button>
-          </motion.div>
         )}
       </AnimatePresence>
 
@@ -234,6 +231,15 @@ function App() {
           >
             <span>{primaryLabel}</span>
             <i aria-hidden="true">{readingIndex !== null ? "↗" : "＋"}</i>
+          </button>
+          <button
+            type="button"
+            className={`gesture-action ${gestureEnabled ? "active" : ""}`}
+            onClick={() => setGestureEnabled((value) => !value)}
+            aria-pressed={gestureEnabled}
+          >
+            <i aria-hidden="true" />
+            <span>{gestureEnabled ? "手势开启" : "手势模式"}</span>
           </button>
           <button type="button" className="ghost-action" onClick={reset} aria-label="重新生长">↺</button>
         </div>
