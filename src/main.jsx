@@ -1,11 +1,13 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion } from "framer-motion";
 import { records as starterRecords } from "./data/records.js";
+import { GestureInput } from "./input/GestureInput.jsx";
 import { ParticleTree } from "./scene/ParticleTree.jsx";
 import "./styles.css";
 
 const STORAGE_KEY = "mentor-cognition-tree-records-v1";
+const isEditorMode = new URLSearchParams(window.location.search).get("edit") === "1";
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -14,7 +16,7 @@ function clamp(value, min, max) {
 function loadRecords() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(stored) && stored.length ? stored : starterRecords;
+    return isEditorMode && Array.isArray(stored) && stored.length ? stored : starterRecords;
   } catch {
     return starterRecords;
   }
@@ -22,10 +24,13 @@ function loadRecords() {
 
 function App() {
   const [records, setRecords] = useState(loadRecords);
+  const [entered, setEntered] = useState(false);
   const [settledCount, setSettledCount] = useState(0);
   const [readingIndex, setReadingIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [gestureEnabled, setGestureEnabled] = useState(false);
+  const [finaleStage, setFinaleStage] = useState("idle");
   const [keyword, setKeyword] = useState("");
   const [insight, setInsight] = useState("");
   const [seedSignal, setSeedSignal] = useState(null);
@@ -42,14 +47,27 @@ function App() {
     [records]
   );
 
+  useEffect(() => {
+    if (!isFinale) {
+      setFinaleStage("idle");
+      return undefined;
+    }
+    setFinaleStage("ascending");
+    const timer = window.setTimeout(() => setFinaleStage("nodes"), 5300);
+    return () => window.clearTimeout(timer);
+  }, [isFinale]);
+
   const harvestFruit = useCallback(() => {
     if (readingIndex !== null || settledCount >= records.length) return;
-    setReadingIndex(settledCount);
-    setSelectedIndex(settledCount);
+    const nextIndex = settledCount;
+    setSettledCount(nextIndex + 1);
+    setReadingIndex(nextIndex);
+    setSelectedIndex(nextIndex);
   }, [readingIndex, settledCount, records.length]);
 
   const selectFruit = useCallback((index) => {
     if (index === settledCount && readingIndex === null && settledCount < records.length) {
+      setSettledCount(index + 1);
       setReadingIndex(index);
       setSelectedIndex(index);
       return;
@@ -59,8 +77,6 @@ function App() {
 
   function settleFruit() {
     if (readingIndex === null) return;
-    const next = Math.max(settledCount, readingIndex + 1);
-    setSettledCount(next);
     setReadingIndex(null);
     setSelectedIndex(readingIndex);
   }
@@ -69,6 +85,7 @@ function App() {
     setSettledCount(0);
     setReadingIndex(null);
     setSelectedIndex(null);
+    setFinaleStage("idle");
   }
 
   function submitMemory(event) {
@@ -101,29 +118,66 @@ function App() {
     setComposerOpen(false);
   }
 
-  const primaryLabel = readingIndex !== null
-    ? "读完，种回树里"
-    : isFinale
-      ? "已凝结"
-      : "摘取下一颗";
+  const phaseLabel = isFinale
+    ? finaleStage === "nodes" ? "COGNITION" : "ASCENDING"
+    : readingIndex !== null ? "LIT · READING"
+      : settledCount ? "GROWING" : "DORMANT";
+  const primaryLabel = readingIndex !== null ? "读完，归入树冠" : "摘取下一颗";
 
   return (
-    <main className={`experience ${readingIndex !== null ? "is-reading" : ""}`}>
+    <main className={[
+      "experience",
+      entered ? "has-entered" : "",
+      readingIndex !== null ? "is-reading" : "",
+      isFinale ? "is-finale" : "",
+      finaleStage === "nodes" ? "is-nodes" : ""
+    ].join(" ")}>
       <ParticleTree
         records={records}
         settledCount={settledCount}
         readingIndex={readingIndex}
         selectedIndex={selectedIndex}
-        seedSignal={seedSignal}
         onFruitSelect={selectFruit}
       />
+
+      <AnimatePresence>
+        {!entered && (
+          <motion.section
+            className="gift-cover"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, filter: "blur(18px)" }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="gift-mark" aria-hidden="true"><i /><span /></div>
+            <p>FOR MY MENTOR</p>
+            <h1>一棵因你<br />生长的树</h1>
+            <button type="button" onClick={() => setEntered(true)}>
+              <span>开启</span><i aria-hidden="true">↗</i>
+            </button>
+            <small>桌面端或横屏观看更完整</small>
+          </motion.section>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {entered && !isFinale && (
+          <motion.div className="experience-toolbar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <span>交互方式</span>
+            <button
+              type="button"
+              className={gestureEnabled ? "active" : ""}
+              onClick={() => setGestureEnabled((value) => !value)}
+            >
+              <i aria-hidden="true" />{gestureEnabled ? "手势感应中" : "开启手势"}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <section className="hud" aria-label="带教认知树内容">
         <div className="brand-row">
           <p className="kicker">MENTOR COGNITION TREE</p>
-          <span className="phase-label">
-            {readingIndex !== null ? "READING" : settledCount ? "GROWING" : "DORMANT"}
-          </span>
+          <span className="phase-label">{phaseLabel}</span>
         </div>
         <h1>带教认知树</h1>
 
@@ -144,7 +198,7 @@ function App() {
             >
               <div className="memory-meta">
                 <span className="date">{activeRecord.date}</span>
-                <span>{readingIndex !== null ? "已摘取 · 阅读中" : "已沉淀"}</span>
+                <span>{readingIndex !== null ? "已点亮 · 阅读中" : "已沉淀"}</span>
               </div>
               <h2>{activeRecord.keyword}</h2>
               <p>{activeRecord.cognition}</p>
@@ -163,16 +217,10 @@ function App() {
               </AnimatePresence>
             </motion.article>
           ) : (
-            <motion.article
-              key="intro"
-              className="memory intro"
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              <span className="date">START HERE</span>
+            <motion.article key="intro" className="memory intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <span className="date">BEGIN · 01</span>
               <h2>待唤醒</h2>
-              <p>摘下发光的果实。读完之后，再把它种回枝头。</p>
+              <p>树上只有一颗果实醒着。点击它，让第一段记忆开始生长。</p>
             </motion.article>
           )}
         </AnimatePresence>
@@ -191,58 +239,42 @@ function App() {
         </div>
       </section>
 
-      <section className={`memory-input ${composerOpen ? "open" : ""}`}>
-        <AnimatePresence mode="wait">
-          {composerOpen ? (
-            <motion.form
-              key="composer"
-              onSubmit={submitMemory}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-            >
-              <div className="input-heading">
-                <span>NEW MEMORY</span>
-                <button type="button" onClick={() => setComposerOpen(false)} aria-label="关闭">×</button>
-              </div>
-              <label>
-                <span>一个性格关键词</span>
-                <input value={keyword} onChange={(event) => setKeyword(event.target.value)} maxLength={6} placeholder="例如：清醒" />
-              </label>
-              <label>
-                <span>今天哪句话改变了你的思考？</span>
-                <textarea value={insight} onChange={(event) => setInsight(event.target.value)} maxLength={180} placeholder="写下一次真实的思维碰撞…" required />
-              </label>
-              <button type="submit" className="seed-button">凝成果实 <span>→</span></button>
-            </motion.form>
-          ) : (
-            <motion.button
-              key="opener"
-              type="button"
-              className="input-opener"
-              onClick={() => setComposerOpen(true)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <span className="input-plus">＋</span>
-              <span><small>INPUT A NEW MEMORY</small>写下今天的思维碰撞</span>
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </section>
+      {isEditorMode && entered && !isFinale && (
+        <section className={`memory-input ${composerOpen ? "open" : ""}`}>
+          <AnimatePresence mode="wait">
+            {composerOpen ? (
+              <motion.form key="composer" onSubmit={submitMemory} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
+                <div className="input-heading">
+                  <span>NEW MEMORY</span>
+                  <button type="button" onClick={() => setComposerOpen(false)} aria-label="关闭">×</button>
+                </div>
+                <label>
+                  <span>一个性格关键词</span>
+                  <input value={keyword} onChange={(event) => setKeyword(event.target.value)} maxLength={6} placeholder="例如：清醒" />
+                </label>
+                <label>
+                  <span>今天哪句话改变了你的思考？</span>
+                  <textarea value={insight} onChange={(event) => setInsight(event.target.value)} maxLength={180} placeholder="写下一次真实的思维碰撞…" required />
+                </label>
+                <button type="submit" className="seed-button">凝成果实 <span>→</span></button>
+              </motion.form>
+            ) : (
+              <motion.button key="opener" type="button" className="input-opener" onClick={() => setComposerOpen(true)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <span className="input-plus">＋</span>
+                <span><small>INPUT A NEW MEMORY</small>写下今天的思维碰撞</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </section>
+      )}
 
       <AnimatePresence>
         {seedSignal && (
           <motion.div key={seedSignal.id} className="seed-stream" onAnimationEnd={() => setSeedSignal(null)}>
             {Array.from({ length: 34 }, (_, index) => (
-              <i
-                key={index}
-                style={{
-                  "--i": index,
-                  "--scatter": `${(index % 7 - 3) * 9}px`,
-                  "--delay": `${(index % 11) * 22}ms`
-                }}
-              >{index % 6 === 0 ? seedSignal.word : "·"}</i>
+              <i key={index} style={{ "--i": index, "--scatter": `${(index % 7 - 3) * 9}px`, "--delay": `${(index % 11) * 22}ms` }}>
+                {index % 6 === 0 ? seedSignal.word : "·"}
+              </i>
             ))}
           </motion.div>
         )}
@@ -253,12 +285,7 @@ function App() {
           <button
             key={`${record.date}-${record.keyword}-${index}`}
             type="button"
-            className={[
-              "timeline-dot",
-              index < settledCount ? "lit" : "",
-              readingIndex === index ? "reading" : "",
-              selectedIndex === index ? "active" : ""
-            ].join(" ")}
+            className={["timeline-dot", index < settledCount ? "lit" : "", readingIndex === index ? "reading" : "", selectedIndex === index ? "active" : ""].join(" ")}
             aria-label={record.keyword}
             onClick={() => selectFruit(index)}
           />
@@ -268,12 +295,25 @@ function App() {
 
       <AnimatePresence>
         {isFinale && (
-          <motion.aside className="node-panel" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 28 }} transition={{ delay: 1.1, duration: 0.8 }}>
-            <strong>认知节点</strong>
-            <div>{cognitionNodes.slice(0, 14).map((item) => <span key={`${item.keyword}-${item.node}`}>{item.node}</span>)}</div>
-          </motion.aside>
+          <motion.section className={`finale-copy ${finaleStage}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: finaleStage === "nodes" ? 0.42 : 1 }}>ALL MEMORIES ARE LIT</motion.p>
+            <AnimatePresence mode="wait">
+              {finaleStage === "nodes" ? (
+                <motion.div key="nodes" className="cognition-cloud" initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}>
+                  <span>我所理解的你</span>
+                  <h2>由每一次碰撞<br />慢慢凝结而成</h2>
+                  <div>{cognitionNodes.slice(0, 18).map((item, index) => <i key={`${item.keyword}-${item.node}-${index}`}>{item.node}</i>)}</div>
+                  <button type="button" onClick={reset}>再看一次</button>
+                </motion.div>
+              ) : (
+                <motion.h2 key="ascending" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }}>光正在穿过树冠</motion.h2>
+              )}
+            </AnimatePresence>
+          </motion.section>
         )}
       </AnimatePresence>
+
+      <GestureInput enabled={gestureEnabled && entered && !isFinale} onClose={() => setGestureEnabled(false)} />
     </main>
   );
 }
