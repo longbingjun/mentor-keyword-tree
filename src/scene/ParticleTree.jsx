@@ -36,6 +36,29 @@ function makePointTexture() {
   return texture;
 }
 
+function makePomegranateGeometry() {
+  const radius = 0.19;
+  const geometry = new THREE.SphereGeometry(radius, 40, 28);
+  const positions = geometry.attributes.position;
+
+  for (let index = 0; index < positions.count; index += 1) {
+    const x = positions.getX(index);
+    const y = positions.getY(index);
+    const z = positions.getZ(index);
+    const angle = Math.atan2(z, x);
+    const latitude = clamp((y / radius + 1) * 0.5, 0, 1);
+    const middleWeight = Math.pow(Math.sin(latitude * Math.PI), 0.72);
+    const lobes = 1 + Math.cos(angle * 7) * 0.055 * middleWeight;
+    const shoulderTaper = 1 - Math.max(0, latitude - 0.72) * 0.24;
+
+    positions.setXYZ(index, x * lobes * shoulderTaper, y * 0.94, z * lobes * shoulderTaper);
+  }
+
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function bezier(a, b, c, d, t) {
   const mt = 1 - t;
   return new THREE.Vector3(
@@ -290,17 +313,34 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
       const isSelected = index === selectedIndex;
       mesh.visible = isAvailable || isReading || isSettled;
       const age = Math.max(0, settledCount - index);
-      const targetScale = isReading ? 1.95 : isAvailable ? 1.08 : isSettled ? clamp(0.46 - age * 0.024, 0.22, 0.46) : 0.01;
+      const targetScale = isReading
+        ? 2.18
+        : isAvailable
+          ? 1.42
+          : isSettled
+            ? isSelected ? 0.72 : clamp(0.5 - age * 0.026, 0.23, 0.5)
+            : 0.01;
       const lift = isSettled ? clamp(age * 0.085, 0.08, 0.52) : isReading ? 0.22 : 0;
       const towardCenter = isSettled ? clamp(age * 0.018, 0, 0.16) : 0;
       const targetX = lerp(mesh.userData.base.x, 1.72, towardCenter);
       const targetZ = isReading ? 0.72 : mesh.userData.base.z;
       gsap.to(mesh.position, { x: targetX, y: mesh.userData.base.y + lift, z: targetZ, duration: isReading ? 0.72 : 1.1, ease: "power3.out" });
       gsap.to(mesh.scale, { x: targetScale, y: targetScale, z: targetScale, duration: isReading ? 0.62 : 0.95, ease: isReading ? "back.out(2.2)" : "power3.out" });
-      gsap.to(mesh.material, {
-        opacity: isComplete ? 0.62 : isReading ? 0.7 : isAvailable ? 0.5 : isSelected ? 0.46 : 0.34,
-        duration: 0.45
-      });
+      const bodyMaterial = mesh.userData.body?.material;
+      const glowMaterial = mesh.userData.glow?.material;
+      if (bodyMaterial) {
+        gsap.to(bodyMaterial, {
+          opacity: isComplete ? 0.92 : isReading ? 1 : isAvailable ? 0.96 : isSelected ? 0.9 : 0.76,
+          emissiveIntensity: isReading ? 2.35 : isAvailable ? 1.7 : isSelected ? 1.35 : 0.9,
+          duration: 0.45
+        });
+      }
+      if (glowMaterial) {
+        gsap.to(glowMaterial, {
+          opacity: isReading ? 0.34 : isAvailable ? 0.22 : isSelected ? 0.14 : 0.08,
+          duration: 0.45
+        });
+      }
       if (mesh.userData.ring) {
         if (isReading && justLitFruit) {
           gsap.fromTo(mesh.userData.ring.scale, { x: 0.2, y: 0.2, z: 0.2 }, { x: 2.65, y: 2.65, z: 2.65, duration: 1.05, ease: "power3.out" });
@@ -356,8 +396,15 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
     mount.appendChild(renderer.domElement);
     stateRef.current.renderer = renderer;
+
+    scene.add(new THREE.AmbientLight("#ffd7a0", 1.55));
+    const fruitLight = new THREE.PointLight("#ff9f32", 18, 7, 1.8);
+    fruitLight.position.set(2.4, 1.2, 2.6);
+    scene.add(fruitLight);
 
     const texture = makePointTexture();
     const data = buildTreeData(records.length);
@@ -449,37 +496,98 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     fruitGroup.position.x = 0.55;
     scene.add(fruitGroup);
 
-    const fruitMaterial = new THREE.MeshBasicMaterial({
-      color: "#ffe6a3",
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      map: texture
-    });
-    const fruitGeometry = new THREE.SphereGeometry(0.024, 20, 20);
-    const haloGeometry = new THREE.SphereGeometry(0.16, 24, 24);
-    const ringGeometry = new THREE.TorusGeometry(0.17, 0.006, 8, 64);
+    const fruitGeometry = makePomegranateGeometry();
+    const haloGeometry = new THREE.SphereGeometry(0.29, 28, 24);
+    const highlightGeometry = new THREE.SphereGeometry(0.085, 18, 14);
+    const topLeafGeometry = new THREE.ConeGeometry(0.028, 0.13, 5);
+    const bottomCrownGeometry = new THREE.ConeGeometry(0.055, 0.075, 6);
+    const stemGeometry = new THREE.CylinderGeometry(0.018, 0.026, 0.065, 8);
+    const ringGeometry = new THREE.TorusGeometry(0.29, 0.009, 8, 72);
 
     data.fruits.forEach((fruit, index) => {
-      const halo = new THREE.Mesh(haloGeometry, fruitMaterial.clone());
-      halo.position.copy(fruit.position);
+      const root = new THREE.Group();
+      root.position.copy(fruit.position);
       const isInitiallyAvailable = index === settledCount && readingIndex === null;
       const isInitiallyReading = index === readingIndex;
       const isInitiallySettled = index < settledCount;
-      halo.visible = isInitiallyAvailable || isInitiallyReading || isInitiallySettled;
-      halo.scale.setScalar(isInitiallyReading ? 1.95 : isInitiallyAvailable ? 1.08 : isInitiallySettled ? 0.42 : 0.01);
-      halo.material.opacity = isInitiallyReading ? 0.7 : isInitiallyAvailable ? 0.5 : isInitiallySettled ? 0.34 : 0;
-      halo.userData = { index, base: fruit.position.clone(), type: "fruit" };
-      fruitGroup.add(halo);
-      stateRef.current.fruitMeshes.push(halo);
+      root.visible = isInitiallyAvailable || isInitiallyReading || isInitiallySettled;
+      root.scale.setScalar(isInitiallyReading ? 2.18 : isInitiallyAvailable ? 1.42 : isInitiallySettled ? 0.5 : 0.01);
 
-      const core = new THREE.Mesh(fruitGeometry, new THREE.MeshBasicMaterial({ color: "#fff4c7" }));
-      core.position.set(0, 0, 0);
-      halo.add(core);
+      const visual = new THREE.Group();
+      root.add(visual);
+
+      const glow = new THREE.Mesh(haloGeometry, new THREE.MeshBasicMaterial({
+        color: "#ff9f2e",
+        transparent: true,
+        opacity: isInitiallyReading ? 0.34 : isInitiallyAvailable ? 0.22 : 0.08,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.BackSide
+      }));
+      visual.add(glow);
+
+      const body = new THREE.Mesh(fruitGeometry, new THREE.MeshPhysicalMaterial({
+        color: "#f27b16",
+        emissive: "#c93609",
+        emissiveIntensity: isInitiallyReading ? 2.35 : isInitiallyAvailable ? 1.7 : 0.9,
+        roughness: 0.28,
+        metalness: 0.06,
+        clearcoat: 0.82,
+        clearcoatRoughness: 0.18,
+        transparent: true,
+        opacity: isInitiallyReading ? 1 : isInitiallyAvailable ? 0.96 : 0.76
+      }));
+      visual.add(body);
+
+      const highlight = new THREE.Mesh(highlightGeometry, new THREE.MeshBasicMaterial({
+        color: "#fff4b3",
+        transparent: true,
+        opacity: 0.72,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      }));
+      highlight.scale.set(0.22, 0.72, 0.18);
+      highlight.position.set(-0.065, 0.045, 0.17);
+      highlight.rotation.z = -0.28;
+      visual.add(highlight);
+
+      const stem = new THREE.Mesh(stemGeometry, new THREE.MeshStandardMaterial({
+        color: "#7fa441",
+        emissive: "#315915",
+        emissiveIntensity: 0.7,
+        roughness: 0.72
+      }));
+      stem.position.y = 0.205;
+      visual.add(stem);
+
+      const leafMaterial = new THREE.MeshStandardMaterial({
+        color: "#8ebd4e",
+        emissive: "#325f17",
+        emissiveIntensity: 0.68,
+        roughness: 0.66,
+        side: THREE.DoubleSide
+      });
+      for (let leafIndex = 0; leafIndex < 6; leafIndex += 1) {
+        const angle = (leafIndex / 6) * Math.PI * 2;
+        const leaf = new THREE.Mesh(topLeafGeometry, leafMaterial);
+        leaf.position.set(Math.cos(angle) * 0.035, 0.222, Math.sin(angle) * 0.035);
+        leaf.rotation.z = Math.cos(angle) * 0.48;
+        leaf.rotation.x = Math.sin(angle) * 0.48;
+        visual.add(leaf);
+      }
+
+      const bottomCrown = new THREE.Mesh(bottomCrownGeometry, new THREE.MeshStandardMaterial({
+        color: "#e75e10",
+        emissive: "#a92808",
+        emissiveIntensity: 1.2,
+        roughness: 0.4
+      }));
+      bottomCrown.rotation.z = Math.PI;
+      bottomCrown.position.y = -0.205;
+      visual.add(bottomCrown);
 
       const ring = new THREE.Mesh(ringGeometry, new THREE.MeshBasicMaterial({
-        color: "#ffe6a3",
+        color: "#ffd86b",
         transparent: true,
         opacity: 0,
         blending: THREE.AdditiveBlending,
@@ -487,8 +595,19 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
       }));
       ring.rotation.x = Math.PI * 0.34;
       ring.scale.setScalar(0.3);
-      halo.add(ring);
-      halo.userData.ring = ring;
+      root.add(ring);
+
+      root.userData = {
+        index,
+        base: fruit.position.clone(),
+        type: "fruit",
+        visual,
+        body,
+        glow,
+        ring
+      };
+      fruitGroup.add(root);
+      stateRef.current.fruitMeshes.push(root);
     });
 
     const memoryMaterial = new THREE.MeshBasicMaterial({
@@ -529,19 +648,39 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
       }
     }
 
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+    const worldPosition = new THREE.Vector3();
+    const projectedPosition = new THREE.Vector3();
 
-    function fruitAt(clientX, clientY) {
-      mouse.x = (clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(stateRef.current.fruitMeshes, false);
-      return hits.find((hit) => hit.object.visible)?.object || null;
+    function fruitAt(clientX, clientY, gesture = false) {
+      let nearest = null;
+      let nearestDistance = Infinity;
+
+      stateRef.current.fruitMeshes.forEach((fruit) => {
+        if (!fruit.visible) return;
+        const isAvailable = fruit.userData.index === stateRef.current.settledCount
+          && stateRef.current.readingIndex === null;
+        if (gesture && !isAvailable) return;
+
+        fruit.getWorldPosition(worldPosition);
+        projectedPosition.copy(worldPosition).project(camera);
+        if (projectedPosition.z < -1 || projectedPosition.z > 1) return;
+
+        const screenX = (projectedPosition.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (-projectedPosition.y * 0.5 + 0.5) * window.innerHeight;
+        const distance = Math.hypot(clientX - screenX, clientY - screenY);
+        const magneticRadius = gesture ? (window.innerWidth < 720 ? 76 : 94) : isAvailable ? 64 : 38;
+
+        if (distance <= magneticRadius && distance < nearestDistance) {
+          nearest = fruit;
+          nearestDistance = distance;
+        }
+      });
+
+      return nearest;
     }
 
-    function hoverAt(clientX, clientY) {
-      const fruit = fruitAt(clientX, clientY);
+    function hoverAt(clientX, clientY, gesture = false) {
+      const fruit = fruitAt(clientX, clientY, gesture);
       stateRef.current.hoveredIndex = fruit?.userData.index ?? null;
       renderer.domElement.style.cursor = fruit ? "pointer" : "default";
       return fruit;
@@ -567,7 +706,7 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     }
 
     function onGestureMove(event) {
-      const fruit = hoverAt(event.detail.clientX, event.detail.clientY);
+      const fruit = hoverAt(event.detail.clientX, event.detail.clientY, true);
       const nextTarget = fruit?.userData.index ?? null;
       if (nextTarget !== stateRef.current.lastGestureTarget) {
         stateRef.current.lastGestureTarget = nextTarget;
@@ -578,8 +717,13 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
     }
 
     function onGestureSelect(event) {
-      const fruit = selectAt(event.detail.clientX, event.detail.clientY);
+      const lockedIndex = stateRef.current.lastGestureTarget;
+      const lockedFruit = lockedIndex === null
+        ? null
+        : stateRef.current.fruitMeshes.find((fruit) => fruit.userData.index === lockedIndex && fruit.visible);
+      const fruit = lockedFruit || fruitAt(event.detail.clientX, event.detail.clientY, true);
       if (fruit) {
+        onFruitSelect(fruit.userData.index);
         window.dispatchEvent(new CustomEvent("mentor:gesturepicked", {
           detail: { index: fruit.userData.index }
         }));
@@ -625,7 +769,10 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
           const isAvailable = mesh.userData.index === stateRef.current.settledCount && stateRef.current.readingIndex === null;
           const isHovered = mesh.userData.index === stateRef.current.hoveredIndex;
           const breathing = isAvailable ? 1 + Math.sin(time * 2.6) * 0.12 : 1;
-          mesh.children[0].scale.setScalar(breathing * (isHovered ? 1.5 : 1));
+          const interactionScale = breathing * (isHovered ? 1.28 : 1);
+          mesh.userData.visual.scale.setScalar(interactionScale);
+          mesh.userData.visual.rotation.y = Math.sin(time * 0.55 + phase) * 0.12;
+          mesh.userData.glow.scale.setScalar(1 + Math.sin(time * 2.1 + phase) * 0.07 + (isHovered ? 0.16 : 0));
           if (mesh.userData.ring) {
             mesh.userData.ring.rotation.z = time * 0.35;
             if (stateRef.current.readingIndex === null && isAvailable) {
@@ -670,9 +817,18 @@ export function ParticleTree({ records, settledCount, readingIndex, selectedInde
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
       mount.removeChild(renderer.domElement);
+      const fruitMaterials = new Set();
+      fruitGroup.traverse((child) => {
+        if (child.material) fruitMaterials.add(child.material);
+      });
+      fruitMaterials.forEach((fruitMaterial) => fruitMaterial.dispose());
       geometry.dispose();
       fruitGeometry.dispose();
       haloGeometry.dispose();
+      highlightGeometry.dispose();
+      topLeafGeometry.dispose();
+      bottomCrownGeometry.dispose();
+      stemGeometry.dispose();
       ringGeometry.dispose();
       memoryGeometry.dispose();
       material.dispose();

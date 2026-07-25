@@ -17,7 +17,7 @@ function withTimeout(promise, timeoutMs) {
   ]);
 }
 
-export function GestureInput({ enabled, onClose }) {
+export function GestureInput({ enabled, reading, onClose }) {
   const videoRef = useRef(null);
   const cursorRef = useRef(null);
   const [status, setStatus] = useState("loading");
@@ -126,7 +126,9 @@ export function GestureInput({ enabled, onClose }) {
 
           const palmWidth = Math.max(distance(landmarks[5], landmarks[17]), 0.001);
           const pinchRatio = distance(indexTip, thumbTip) / palmWidth;
-          const isPinching = wasPinching ? pinchRatio < 0.72 : pinchRatio < 0.52;
+          // Palm-relative thresholds work across different camera distances. The
+          // wider entry threshold keeps an ordinary thumb-index pinch reliable.
+          const isPinching = wasPinching ? pinchRatio < 0.84 : pinchRatio < 0.66;
           const cursor = cursorRef.current;
           if (cursor) {
             cursor.style.opacity = "1";
@@ -135,7 +137,7 @@ export function GestureInput({ enabled, onClose }) {
           }
 
           window.dispatchEvent(new CustomEvent("mentor:gesturemove", {
-            detail: { clientX: smooth.x, clientY: smooth.y }
+            detail: { clientX: smooth.x, clientY: smooth.y, pinchRatio }
           }));
 
           const now = performance.now();
@@ -176,6 +178,8 @@ export function GestureInput({ enabled, onClose }) {
 
   const statusMessage = status === "searching"
     ? "已启动摄像头，请让手掌进入画面"
+    : status === "ready" && reading
+      ? "阅读完成后，再次捏合归入树冠"
     : status === "ready" && targetIndex !== null
       ? "已对准果实，捏合拇指与食指"
       : status === "ready"

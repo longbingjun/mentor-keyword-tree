@@ -57,6 +57,17 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [isFinale]);
 
+  useEffect(() => {
+    function onGestureConfirm() {
+      if (readingIndex === null) return;
+      setReadingIndex(null);
+      setSelectedIndex(readingIndex);
+    }
+
+    window.addEventListener("mentor:gestureselect", onGestureConfirm);
+    return () => window.removeEventListener("mentor:gestureselect", onGestureConfirm);
+  }, [readingIndex]);
+
   const harvestFruit = useCallback(() => {
     if (readingIndex !== null || settledCount >= records.length) return;
     const nextIndex = settledCount;
@@ -319,7 +330,11 @@ function App() {
         )}
       </AnimatePresence>
 
-      <GestureInput enabled={gestureEnabled && entered && !isFinale} onClose={() => setGestureEnabled(false)} />
+      <GestureInput
+        enabled={gestureEnabled && entered && !isFinale}
+        reading={readingIndex !== null}
+        onClose={() => setGestureEnabled(false)}
+      />
     </main>
   );
 }
